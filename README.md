@@ -58,7 +58,8 @@ pacman, so there's nothing to compile, and OmaPlayer shows up in the launcher.
 `omarchy-update` keeps it up to date from then on; `sudo pacman -R omaplayer`
 removes it. To compile instead,
 add `-s -- --build` (the release) or `-s -- --git` (the latest from `main`).
-It works the same on x86_64 and ARM (Apple Silicon with Asahi, Snapdragon).
+It works the same on x86_64 and aarch64; the aarch64 build is for Omarchy's experimental
+Apple M-series support (Asahi).
 
 ## Smart subtitles
 
