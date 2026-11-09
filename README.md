@@ -44,8 +44,7 @@ It installs the prebuilt package from the
 pacman, so there's nothing to compile, and Omaplayer shows up in the launcher. Run
 it again to update; `sudo pacman -R omaplayer` removes it. To compile instead,
 add `-s -- --build` (the release) or `-s -- --git` (the latest from `main`).
-On ARM (Apple Silicon with Asahi, Snapdragon), the same line builds it from
-source for you.
+It works the same on x86_64 and ARM (Apple Silicon with Asahi, Snapdragon).
 
 ## Smart subtitles
 
