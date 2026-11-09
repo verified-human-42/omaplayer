@@ -12,7 +12,7 @@ checkdepends=('ffmpeg')
 optdepends=('yt-dlp: play stream URLs'
             'noto-fonts-cjk: Chinese, Japanese, and Korean file names and subtitles')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('SKIP')
+sha256sums=('102d3fa999c7f2caf416abcc1a4e31f2d9415c8b8d8f3c5f80803b0fc27a2e32')
 
 build() {
   cd "$pkgname-$pkgver"
