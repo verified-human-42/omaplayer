@@ -11,7 +11,7 @@
 
 <br><br>
 
-<img src="docs/screenshots/playback.webp" alt="OmaPlayer playing an interview with Korean subtitles, tiled beside btop, fastfetch, and Neovim">
+<img src="docs/screenshots/hero.webp" alt="OmaPlayer's start screen, every shortcut at a glance, over the Starship theme">
 
 </div>
 
@@ -36,6 +36,10 @@ had, doesn't run here.
   window, folder playlists, resume where you left off, and YouTube by URL.
 - **Subtitles never come out garbled.** Any encoding, any language. See below.
 - **Speaks your language:** English, 한국어, 日本語, 简体中文, 繁體中文.
+
+<p align="center">
+  <img src="docs/screenshots/playback.webp" alt="OmaPlayer playing an interview, tiled beside btop, fastfetch, and Neovim">
+</p>
 
 ## Install
 
