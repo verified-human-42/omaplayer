@@ -273,7 +273,8 @@ void Actions::trigger(const QString &id) {
             QVariantList command;
             for (const auto &part : commandFor(spec))
                 command.append(part);
-            m_player->command(command, spec.osd);
+            // Seeks say which seek in the corner ("position:seek-forward").
+            m_player->command(command, spec.osd == "position" ? "position:" + spec.id : spec.osd);
             break;
         }
         case Kind::Player:

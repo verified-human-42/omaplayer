@@ -141,6 +141,11 @@ ApplicationWindow {
         return qsTr("Off");
     }
 
+    // "[2/3] " in a playlist, nothing for a single file.
+    function placeInPlaylist() {
+        return player.playlistCount > 1 ? "[" + (player.playlistPosition + 1) + "/" + player.playlistCount + "] " : "";
+    }
+
     // The file's name, as on disk; a stream's own title.
     function mediaName() {
         var path = player.path;
@@ -163,16 +168,18 @@ ApplicationWindow {
     }
 
     function showOsd(kind) {
-        if (!settings.values["interface/osd"])
-            return;
+        // "position:seek-forward": what changed, and the action that changed it.
+        var source = kind.indexOf(":") > 0 ? kind.split(":")[1] : "";
+        kind = kind.split(":")[0];
         osd.kind = kind;
         switch (kind) {
         case "pause":
             osd.show({ icon: player.paused ? "pause" : "play", value: player.paused ? qsTr("Paused") : qsTr("Playing") });
             break;
         case "position":
-            osd.show({ value: Format.time(player.position) + " / " + Format.time(player.duration)
-                              + (player.duration > 0 ? "  (" + Math.round(100 * player.position / player.duration) + "%)" : "") });
+            osd.show({ label: source !== "" ? actions.text(source) : "",
+                       value: Format.time(player.position) + " / " + Format.time(player.duration)
+                              + (player.duration > 0 ? " (" + Math.round(100 * player.position / player.duration) + "%)" : "") });
             break;
         case "frame":
             osd.show({ label: qsTr("Frame"), value: Format.precise(player.position) });
@@ -302,17 +309,17 @@ ApplicationWindow {
         // it picks up when it resumes.
         case "file":
         case "resume":
-            var where = player.playlistCount > 1 ? (player.playlistPosition + 1) + " / " + player.playlistCount : "";
-            if (kind === "resume")
-                where += (where === "" ? "" : "  ·  ") + qsTr("Resumed %1").arg(Format.time(player.position));
-            osd.show({ icon: "play", label: where, value: mediaName(), duration: 3000 });
+            osd.show({ value: placeInPlaylist() + mediaName()
+                              + (kind === "resume" ? "  ·  " + qsTr("Resumed %1").arg(Format.time(player.position)) : ""),
+                       duration: 3000 });
             break;
         // Moving the mouse over the picture shows what's playing, until the
         // controls step aside.
         case "hover":
-            osd.show({ icon: player.paused ? "pause" : "play",
-                       label: player.playlistCount > 1 ? (player.playlistPosition + 1) + " / " + player.playlistCount : "",
-                       value: mediaName(), duration: settings.values["interface/hideDelay"] * 1000 });
+            osd.show({ value: placeInPlaylist() + mediaName(), duration: settings.values["interface/hideDelay"] * 1000 });
+            break;
+        case "opening":
+            osd.show({ value: qsTr("Opening…"), duration: 15000 });
             break;
         case "clipboard-empty":
             osd.show({ label: qsTr("Clipboard"), value: qsTr("Nothing to open") });
@@ -328,6 +335,12 @@ ApplicationWindow {
     Connections {
         target: player
         function onOsd(kind) { win.showOsd(kind); }
+        function onOpeningChanged() {
+            if (player.opening)
+                win.showOsd("opening");
+            else if (osd.kind === "opening")
+                osd.hide();
+        }
         // Opening something from the start screen goes fullscreen, if asked.
         function onIdleChanged() {
             if (!player.idle && settings.values["interface/startFullscreen"] && !win.fullscreen)

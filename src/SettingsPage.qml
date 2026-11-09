@@ -260,13 +260,6 @@ Popup {
                               options: [{ value: "volume", label: qsTr("Volume") }, { value: "seek", label: qsTr("Seek") }] },
                         ]
                     },
-                    {
-                        title: qsTr("Messages"), note: qsTr("Text on the picture."),
-                        rows: [
-                            { key: "interface/osd", type: "switch", label: qsTr("Corner messages"),
-                              description: qsTr("The file name, volume, seeking, and every other change, in the top-left corner.") },
-                        ]
-                    },
                 ]
             },
             {

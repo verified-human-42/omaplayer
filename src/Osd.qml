@@ -2,9 +2,10 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Effects
 
-// Corner messages the way Windows players draw them: bare text on the
-// picture, outlined and shadowed so it reads over anything, top left. It
-// grows with the window, so fullscreen on a big screen reads from the couch.
+// Corner messages the way Windows players draw them: one bold line on the
+// picture, top left, in the accent, outlined and shadowed so it reads over
+// anything. It grows with the window, so fullscreen reads from the couch.
+// Not customizable, on purpose.
 Item {
     id: osd
 
@@ -16,11 +17,10 @@ Item {
     property string value
     // Long values (file names) elide to fit the window.
     property real maxWidth: 100000
-    // The stage colours: light text on the palette's darkest colour, in
-    // light themes too.
-    readonly property color ink: theme.stageForeground
+    // The accent, edged in the palette's darkest colour (light themes too).
+    readonly property color ink: theme.accent
     readonly property color edge: theme.stage
-    readonly property int size: Math.round(Math.max(16, Math.min(36, (Window.window ? Window.window.height : 720) * 0.025)))
+    readonly property int size: Math.round(Math.max(15, Math.min(32, (Window.window ? Window.window.height : 720) * 0.022)))
 
     // message: { label, value, duration (ms) }
     function show(message) {
@@ -61,30 +61,19 @@ Item {
 
         Row {
             id: row
-            spacing: Math.round(osd.size * 0.4)
-
-            Label {
-                id: labelText
-                visible: osd.label !== ""
-                text: osd.label
-                color: osd.ink
-                style: Text.Outline
-                styleColor: osd.edge
-                font.pixelSize: osd.size
-            }
 
             TextMetrics {
-                id: valueMetrics
-                font: valueText.font
-                text: osd.value
+                id: metrics
+                font: message.font
+                text: message.text
             }
+            // One bold line, "Volume: 80%", in the theme's accent, the way
+            // Windows players set theirs in their skin's colour.
             Label {
-                id: valueText
-                visible: osd.value !== ""
-                width: Math.min(Math.ceil(valueMetrics.advanceWidth) + 2,
-                                osd.maxWidth - (labelText.visible ? labelText.width + row.spacing : 0))
+                id: message
+                width: Math.min(Math.ceil(metrics.advanceWidth) + 2, osd.maxWidth)
                 elide: Text.ElideMiddle
-                text: osd.value
+                text: osd.label !== "" && osd.value !== "" ? osd.label + ": " + osd.value : osd.label + osd.value
                 color: osd.ink
                 style: Text.Outline
                 styleColor: osd.edge

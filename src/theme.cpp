@@ -24,6 +24,11 @@ const QHash<QString, QString> &fallback(bool dark) {
         {"dark_foreground", "#565f89"},
         {"selection", "#292e42"},
         {"red", "#f7768e"},
+        {"green", "#9ece6a"},
+        {"blue", "#7aa2f7"},
+        {"cyan", "#7dcfff"},
+        {"magenta", "#bb9af7"},
+        {"orange", "#ff9e64"},
     };
     static const QHash<QString, QString> lightColors = {
         {"accent", "#1e66f5"},
@@ -34,6 +39,11 @@ const QHash<QString, QString> &fallback(bool dark) {
         {"dark_foreground", "#9ca0b0"},
         {"selection", "#ccd0da"},
         {"red", "#d20f39"},
+        {"green", "#40a02b"},
+        {"blue", "#1e66f5"},
+        {"cyan", "#04a5e5"},
+        {"magenta", "#8839ef"},
+        {"orange", "#fe640b"},
     };
     return dark ? darkColors : lightColors;
 }

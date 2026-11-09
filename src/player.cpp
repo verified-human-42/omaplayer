@@ -328,7 +328,7 @@ void Player::handleEvent(const mpv_event &event) {
             finishScreenshot(kind, true);
             break;
         }
-        refresh(kind);
+        refresh(kind.section(':', 0, 0));
         emit osd(kind);
         break;
     }

@@ -91,7 +91,6 @@ const QList<Settings::Spec> &Settings::specs() {
         {"interface/controls", "docked", {"docked", "floating"}},
         {"interface/remaining", false},
         {"interface/hideDelay", 2, {}, 1, 10},
-        {"interface/osd", true},
         {"interface/startFullscreen", false},
     };
     return table;

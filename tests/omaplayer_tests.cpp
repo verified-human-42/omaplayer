@@ -810,7 +810,7 @@ private slots:
                 continue;
             }
             QVERIFY2(QTest::qWaitFor([&] { return !osd.isEmpty(); }, 5000), qPrintable(spec.id + " said nothing"));
-            const QString kind = osd.last().first().toString();
+            const QString kind = osd.last().first().toString().section(':', 0, 0);
             QStringList expected{spec.osd};
             if (spec.id == "repeat") expected = {"repeat"};
             if (spec.id.startsWith("loop-")) expected = {"ab-loop"};
