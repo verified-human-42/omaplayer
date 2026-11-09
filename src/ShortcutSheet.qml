@@ -26,7 +26,7 @@ Popup {
 
     background: TitledBox {
         title: qsTr("Shortcuts · %1").arg(actions.keymap === "mpv" ? qsTr("mpv layout") : qsTr("Omaplayer layout"))
-        fillOpacity: 0.9
+        stage: false
     }
 
     contentItem: Flickable {
@@ -62,10 +62,8 @@ Popup {
                         Label {
                             text: group.modelData.text
                             color: theme.accent
-                            font.pixelSize: 11
-                            font.weight: Font.DemiBold
-                            font.capitalization: Font.AllUppercase
-                            font.letterSpacing: 1.4
+                            font.pixelSize: 13
+                            font.bold: true
                         }
 
                         Repeater {

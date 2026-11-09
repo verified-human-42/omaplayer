@@ -1,46 +1,39 @@
 import QtQuick
 import QtQuick.Controls
 
-// A box with its title set into the top border, the way terminal UIs draw
-// panels. Drawn opaque inside a layer, so the whole thing fades as one.
+// A card with its title set into the top border, the way btop and other
+// terminal UIs on Omarchy draw their panels.
 Item {
     id: box
 
     property string title
-    property color fillColor: theme.background
-    property color lineColor: theme.selection
-    property color titleColor: theme.accent
-    property real fillOpacity: 1
+    property bool stage: true
+    property color edge: theme.accent
+    property color titleColor: stage ? theme.stageForeground : theme.foreground
     readonly property real titleHeight: titleLabel.implicitHeight
 
-    layer.enabled: fillOpacity < 1
-    opacity: fillOpacity
-
-    Rectangle {
+    Card {
+        id: card
         anchors.fill: parent
         anchors.topMargin: box.titleHeight / 2
-        color: box.fillColor
-        radius: Math.min(6, theme.radius)
-        border.width: 1
-        border.color: box.lineColor
+        stage: box.stage
+        edge: box.edge
     }
 
     Rectangle {
         visible: box.title !== ""
-        x: 14
+        x: Math.max(12, theme.radius + 6)
         width: titleLabel.implicitWidth + 12
         height: titleLabel.implicitHeight
-        color: box.fillColor
+        color: card.surface
 
         Label {
             id: titleLabel
             anchors.centerIn: parent
             text: box.title
             color: box.titleColor
-            font.pixelSize: 11
-            font.weight: Font.DemiBold
-            font.capitalization: Font.AllUppercase
-            font.letterSpacing: 1.4
+            font.pixelSize: 13
+            font.bold: true
         }
     }
 }

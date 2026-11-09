@@ -10,6 +10,7 @@
         <file alias="Main.qml">Main.qml</file>
         <file alias="MasterMenu.qml">MasterMenu.qml</file>
         <file alias="MenuEntry.qml">MenuEntry.qml</file>
+        <file alias="Card.qml">Card.qml</file>
         <file alias="Osd.qml">Osd.qml</file>
         <file alias="PlaybackInfo.qml">PlaybackInfo.qml</file>
         <file alias="PlaylistPanel.qml">PlaylistPanel.qml</file>

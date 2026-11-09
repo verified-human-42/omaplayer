@@ -10,12 +10,8 @@ TitledBox {
     property var rows: []
 
     title: qsTr("Playback")
-    fillColor: theme.stage
-    lineColor: Qt.rgba(ink.r, ink.g, ink.b, 0.16)
-    titleColor: theme.accent
-    fillOpacity: 0.92
     implicitWidth: grid.implicitWidth + 36
-    implicitHeight: grid.implicitHeight + titleHeight + 22
+    implicitHeight: grid.implicitHeight + titleHeight / 2 + 34
 
     readonly property color ink: theme.stageForeground
 
@@ -57,7 +53,7 @@ TitledBox {
     GridLayout {
         id: grid
         x: 18
-        y: info.titleHeight + 10
+        y: info.titleHeight / 2 + 17
         columns: 2
         columnSpacing: 18
         rowSpacing: 4
@@ -69,9 +65,8 @@ TitledBox {
                 required property var modelData
                 text: modelData
                 color: index % 2 === 0 ? theme.stageMuted : theme.stageForeground
-                font.pixelSize: 12
-                font.capitalization: index % 2 === 0 ? Font.AllUppercase : Font.MixedCase
-                font.letterSpacing: index % 2 === 0 ? 1 : 0
+                font.pixelSize: 13
+                font.bold: index === 1 // the file name
                 elide: Text.ElideMiddle
                 Layout.maximumWidth: index % 2 === 0 ? 120 : 460
             }

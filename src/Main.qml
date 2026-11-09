@@ -128,48 +128,53 @@ ApplicationWindow {
     function showOsd(kind) {
         switch (kind) {
         case "pause":
-            osd.show(player.paused ? qsTr("Paused") : qsTr("Playing"));
+            osd.show({ icon: player.paused ? "pause" : "play", value: player.paused ? qsTr("Paused") : qsTr("Playing") });
             break;
         case "position":
-            osd.show(qsTr("Seek"), Format.time(player.position) + " / " + Format.time(player.duration),
-                     player.duration > 0 ? player.position / player.duration : -1);
+            osd.show({ value: Format.time(player.position) + " / " + Format.time(player.duration),
+                       meter: player.duration > 0 ? player.position / player.duration : -1 });
             break;
         case "frame":
-            osd.show(qsTr("Frame"), Format.precise(player.position));
+            osd.show({ label: qsTr("Frame"), value: Format.precise(player.position) });
             break;
         case "volume":
-            osd.show(qsTr("Volume"), Math.round(player.volume) + "%",
-                     player.volume / (settings.values["audio/boost"] ? 150 : 100));
+            osd.show({ icon: player.muted || player.volume === 0 ? "volume-muted" : "volume",
+                       value: Math.round(player.volume) + "%",
+                       meter: player.volume / (settings.values["audio/boost"] ? 150 : 100) });
             break;
         case "mute":
-            osd.show(qsTr("Mute"), player.muted ? qsTr("On") : qsTr("Off"));
+            osd.show({ icon: player.muted ? "volume-muted" : "volume", label: qsTr("Mute"),
+                       value: player.muted ? qsTr("On") : qsTr("Off") });
             break;
         case "speed":
-            osd.show(qsTr("Speed"), Number(player.speed).toLocaleString(Qt.locale(), 'f', 2) + "×");
+            osd.show({ icon: "playback", label: qsTr("Speed"),
+                       value: Number(player.speed).toLocaleString(Qt.locale(), 'f', 2) + "×" });
             break;
         case "sub-delay":
-            osd.show(qsTr("Subtitle sync"), qsTr("%1 s").arg(signed(player.subDelay, 1)));
+            osd.show({ icon: "subtitles", label: qsTr("Subtitle sync"), value: qsTr("%1 s").arg(signed(player.subDelay, 1)) });
             break;
         case "audio":
-            osd.show(qsTr("Audio"), trackName("audio"));
+            osd.show({ icon: "volume", label: qsTr("Audio"), value: trackName("audio") });
             break;
         case "subtitle":
-            osd.show(qsTr("Subtitles"), trackName("sub"));
+            osd.show({ icon: "subtitles", label: qsTr("Subtitles"), value: trackName("sub") });
             break;
         case "sub-visibility":
-            osd.show(qsTr("Subtitles"), player.get("sub-visibility") ? qsTr("Shown") : qsTr("Hidden"));
+            osd.show({ icon: "subtitles", label: qsTr("Subtitles"),
+                       value: player.get("sub-visibility") ? qsTr("Shown") : qsTr("Hidden") });
             break;
         case "playlist":
-            osd.show(qsTr("Playlist"), qsTr("%1 of %2").arg(player.playlistPosition + 1).arg(player.playlistCount));
+            osd.show({ icon: "playlist", label: qsTr("Playlist"),
+                       value: qsTr("%1 of %2").arg(player.playlistPosition + 1).arg(player.playlistCount) });
             break;
         case "playlist-edge":
-            osd.show(qsTr("Playlist"), qsTr("No more files"));
+            osd.show({ icon: "playlist", label: qsTr("Playlist"), value: qsTr("No more files") });
             break;
         case "shuffle":
-            osd.show(qsTr("Playlist"), qsTr("Shuffled"));
+            osd.show({ icon: "shuffle", label: qsTr("Playlist"), value: qsTr("Shuffled") });
             break;
         case "repeat":
-            osd.show(qsTr("Repeat"), player.repeat ? qsTr("On") : qsTr("Off"));
+            osd.show({ icon: "repeat", label: qsTr("Repeat"), value: player.repeat ? qsTr("On") : qsTr("Off") });
             break;
         // A file starting: its place in the playlist and its name, and where
         // it picks up when it resumes.
@@ -178,10 +183,10 @@ ApplicationWindow {
             var where = player.playlistCount > 1 ? (player.playlistPosition + 1) + " / " + player.playlistCount : "";
             if (kind === "resume")
                 where += (where === "" ? "" : "  ·  ") + qsTr("Resumed %1").arg(Format.time(player.position));
-            osd.show(where, mediaName(), -1, 3000);
+            osd.show({ icon: "play", label: where, value: mediaName(), duration: 3000 });
             break;
         case "clipboard-empty":
-            osd.show(qsTr("Clipboard"), qsTr("Nothing to open"));
+            osd.show({ label: qsTr("Clipboard"), value: qsTr("Nothing to open") });
             break;
         }
     }
@@ -396,18 +401,15 @@ ApplicationWindow {
         }
 
         // Errors stay up until the next file plays or they're clicked away.
-        Rectangle {
+        Card {
             id: errorBanner
             visible: player.error !== ""
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: controlBar.top
             anchors.bottomMargin: 18
-            width: Math.min(root.width - 48, errorText.implicitWidth + 40)
-            height: errorText.implicitHeight + 20
-            radius: Math.min(4, theme.radius)
-            color: theme.stage
-            border.width: 1
-            border.color: theme.error
+            width: Math.min(root.width - 48, errorText.implicitWidth + 36)
+            height: errorText.implicitHeight + 32
+            edge: theme.error
 
             Label {
                 id: errorText
@@ -416,7 +418,8 @@ ApplicationWindow {
                 text: player.error
                 color: theme.stageForeground
                 wrapMode: Text.WordWrap
-                font.pixelSize: 13
+                font.pixelSize: 14
+                font.bold: true
             }
 
             MouseArea {

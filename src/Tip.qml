@@ -13,10 +13,10 @@ ToolTip {
 
     contentItem: Row {
         spacing: 10
-        leftPadding: 10
-        rightPadding: 10
-        topPadding: 6
-        bottomPadding: 6
+        leftPadding: 12
+        rightPadding: 12
+        topPadding: 8
+        bottomPadding: 8
 
         Label {
             text: tip.text
@@ -31,11 +31,5 @@ ToolTip {
         }
     }
 
-    background: Rectangle {
-        readonly property color ink: theme.stageForeground
-        color: theme.stage
-        radius: Math.min(4, theme.radius)
-        border.width: 1
-        border.color: Qt.rgba(ink.r, ink.g, ink.b, 0.14)
-    }
+    background: Card {}
 }

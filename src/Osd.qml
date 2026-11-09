@@ -1,92 +1,91 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.impl
 
-// Corner messages, set like a status line: an accent rule, the
-// subject in small capitals, the value, and a segmented meter for levels.
+// Corner messages, drawn like Omarchy's own OSD: a card with an icon, the
+// message in bold, and a flat bar for levels. It sits top left, where
+// Windows players put it.
 Item {
     id: osd
 
+    property string icon
     property string label
     property string value
     property real meter: -1
     // Long values (file names) elide to fit the window.
     property real maxWidth: 100000
     readonly property color ink: theme.stageForeground
-    readonly property color base: theme.stage
+    readonly property int pad: 16
+    readonly property int gap: 11
 
-    function show(label, value, meter, duration) {
-        osd.label = label;
-        osd.value = value || "";
-        osd.meter = meter === undefined ? -1 : meter;
-        panel.opacity = 1;
-        hideTimer.interval = duration || 1600;
+    // message: { icon, label, value, meter (0–1, or none), duration (ms) }
+    function show(message) {
+        osd.icon = message.icon || "";
+        osd.label = message.label || "";
+        osd.value = message.value || "";
+        osd.meter = message.meter === undefined || message.meter < 0 ? -1 : Math.min(1, message.meter);
+        hideTimer.interval = message.duration || 1600;
+        card.opacity = 1;
         hideTimer.restart();
     }
 
     function hide() {
         hideTimer.stop();
-        panel.opacity = 0;
+        card.opacity = 0;
     }
 
-    implicitWidth: panel.width
-    implicitHeight: panel.height
+    implicitWidth: card.width
+    implicitHeight: card.height
 
-    Rectangle {
-        id: panel
-        width: content.implicitWidth + 30
-        height: content.implicitHeight + 18
+    Card {
+        id: card
+        width: content.width + 2 * (osd.pad + border.width)
+        height: 24 + 2 * (osd.pad + border.width)
         opacity: 0
         visible: opacity > 0
-        radius: Math.min(4, theme.radius)
-        color: Qt.rgba(osd.base.r, osd.base.g, osd.base.b, 0.88)
-        border.width: 1
-        border.color: Qt.rgba(osd.ink.r, osd.ink.g, osd.ink.b, 0.08)
 
         Behavior on opacity {
             NumberAnimation { duration: 140 }
         }
 
-        Rectangle {
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.margins: 1
-            width: 3
-            color: theme.accent
-        }
-
         Row {
             id: content
+            x: osd.pad + card.border.width
             anchors.verticalCenter: parent.verticalCenter
-            x: 18
-            spacing: 14
+            spacing: osd.gap
+
+            IconImage {
+                visible: osd.icon !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                source: osd.icon !== "" ? "qrc:/icons/" + osd.icon + ".svg" : ""
+                sourceSize: Qt.size(22, 22)
+                color: osd.ink
+            }
 
             Label {
                 id: labelText
                 visible: osd.label !== ""
-                anchors.baseline: valueText.baseline
+                anchors.verticalCenter: parent.verticalCenter
                 text: osd.label
-                color: osd.value === "" ? theme.stageForeground : theme.stageMuted
-                font.pixelSize: osd.value === "" ? 18 : 11
-                font.capitalization: Font.AllUppercase
-                font.letterSpacing: osd.value === "" ? 1.5 : 1.2
-                font.weight: Font.DemiBold
+                color: theme.stageMuted
+                font.pixelSize: 14
             }
 
-            Row {
+            Rectangle {
                 visible: osd.meter >= 0
-                anchors.verticalCenter: valueText.verticalCenter
-                spacing: 2
+                anchors.verticalCenter: parent.verticalCenter
+                width: 142
+                height: 6
+                color: Qt.rgba(osd.ink.r, osd.ink.g, osd.ink.b, 0.45)
 
-                Repeater {
-                    model: 20
-                    delegate: Rectangle {
-                        required property int index
-                        width: 5
-                        height: 12
-                        radius: Math.min(1, theme.radius)
-                        color: (index + 0.5) / 20 <= osd.meter ? theme.accent
-                             : Qt.rgba(osd.ink.r, osd.ink.g, osd.ink.b, 0.16)
+                Rectangle {
+                    height: parent.height
+                    width: parent.width * Math.max(0, osd.meter)
+                    color: theme.accent
+
+                    Behavior on width {
+                        enabled: card.opacity === 1
+                        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
                     }
                 }
             }
@@ -99,13 +98,17 @@ Item {
             Label {
                 id: valueText
                 visible: osd.value !== ""
+                anchors.verticalCenter: parent.verticalCenter
                 width: Math.min(Math.ceil(valueMetrics.advanceWidth) + 2,
-                                osd.maxWidth - 48 - (labelText.visible ? labelText.width + content.spacing : 0))
+                                osd.maxWidth - 2 * (osd.pad + card.border.width)
+                                - (osd.icon !== "" ? 22 + osd.gap : 0)
+                                - (labelText.visible ? labelText.width + osd.gap : 0)
+                                - (osd.meter >= 0 ? 142 + osd.gap : 0))
                 elide: Text.ElideMiddle
                 text: osd.value
-                color: theme.stageForeground
-                font.pixelSize: 18
-                font.weight: Font.DemiBold
+                color: osd.ink
+                font.pixelSize: 14
+                font.bold: true
             }
         }
     }
@@ -113,6 +116,6 @@ Item {
     Timer {
         id: hideTimer
         interval: 1600
-        onTriggered: panel.opacity = 0
+        onTriggered: card.opacity = 0
     }
 }

@@ -14,9 +14,9 @@ Menu {
     background: Rectangle {
         implicitWidth: 240
         color: theme.background
-        radius: Math.min(6, theme.radius)
-        border.width: 1
-        border.color: theme.selection
+        radius: theme.radius
+        border.width: 2
+        border.color: theme.accent
     }
 
     Instantiator {
@@ -33,9 +33,9 @@ Menu {
             background: Rectangle {
                 implicitWidth: 260
                 color: theme.background
-                radius: Math.min(6, theme.radius)
-                border.width: 1
-                border.color: theme.selection
+                radius: theme.radius
+                border.width: 2
+                border.color: theme.accent
             }
 
             Instantiator {
