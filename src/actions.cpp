@@ -125,6 +125,7 @@ const QList<Actions::Spec> &Actions::specs() {
         {"fullscreen", "screen", QT_TRANSLATE_NOOP("Actions", "Fullscreen"), {"Return", "Enter", "Alt+Return", "F11"}, {"F", "F11"}, K::Window, {}, {}},
         {"exit-fullscreen", "screen", QT_TRANSLATE_NOOP("Actions", "Exit Fullscreen"), {"Esc"}, {"Esc"}, K::Window, {}, {}},
         {"info", "screen", QT_TRANSLATE_NOOP("Actions", "Playback Info"), {"Tab", "Ctrl+I", "Ctrl+F1"}, {"I"}, K::Window, {}, {}},
+        {"picture-in-picture", "screen", QT_TRANSLATE_NOOP("Actions", "Picture in Picture"), {"P"}, {}, K::Window, {}, {}},
 
         {"settings", "help", QT_TRANSLATE_NOOP("Actions", "Settings…"), {"F5", "Ctrl+,"}, {"Ctrl+,"}, K::Window, {}, {}},
         {"shortcuts", "help", QT_TRANSLATE_NOOP("Actions", "Keyboard Shortcuts"), {"?", "F1", "Ctrl+/"}, {"?", "F1"}, K::Window, {}, {}},

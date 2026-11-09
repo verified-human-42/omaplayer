@@ -11,6 +11,7 @@ DEFINES += OMAPLAYER_VERSION=\\\"$$VERSION\\\"
 
 HEADERS += \
     src/actions.h \
+    src/desktop.h \
     src/filepicker.h \
     src/mpris.h \
     src/player.h \
@@ -27,6 +28,7 @@ HEADERS += \
 SOURCES += \
     src/main.cpp \
     src/actions.cpp \
+    src/desktop.cpp \
     src/mpris.cpp \
     src/player.cpp \
     src/portalfilepicker.cpp \

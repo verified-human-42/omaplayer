@@ -6,6 +6,8 @@
 #include <QFile>
 #include <QGuiApplication>
 #include <QImage>
+#include <QJsonArray>
+#include <QJsonObject>
 #include <QKeySequence>
 #include <QProcess>
 #include <QSettings>
@@ -21,6 +23,7 @@
 #include <iconv.h>
 
 #include "actions.h"
+#include "desktop.h"
 #include "mpris.h"
 #include "sami.h"
 #include "textencoding.h"
@@ -498,7 +501,7 @@ private slots:
         int everyday = 0;
         for (const auto &entry : actions.list())
             everyday += entry.toMap().value("everyday").toBool() && !entry.toMap().value("keys").toStringList().isEmpty();
-        QVERIFY(everyday <= 30);
+        QVERIFY(everyday <= 32);
     }
 
     void seekStepsFollowSettings()
@@ -940,6 +943,36 @@ private slots:
         call("Stop");
         QTRY_VERIFY(player.idle());
         QCOMPARE(get(control, "PlaybackStatus").toString(), QString("Stopped"));
+    }
+
+    // Picture in picture: a third of the monitor, the video's shape, in the
+    // bottom-right corner clear of the bar.
+    void pictureInPictureFitsTheCorner()
+    {
+        const QJsonObject monitor{{"x", 2560}, {"y", 0}, {"width", 3840}, {"height", 2160}, {"scale", 1.5},
+                                  {"reserved", QJsonArray{0, 24, 0, 0}}};
+        const QRect wide = Desktop::cornerFor(monitor, 16.0 / 9);
+        QCOMPARE(wide.size(), QSize(853, 480));
+        QCOMPARE(wide.right() + 1, 2560 + 2560 - 20);
+        QCOMPARE(wide.bottom() + 1, 1440 - 20);
+
+        // Tall video is held to 40% of the height.
+        const QRect tall = Desktop::cornerFor(monitor, 9.0 / 16);
+        QCOMPARE(tall.height(), 576);
+        QCOMPARE(tall.width(), 324);
+
+        // A bar along the bottom pushes it up; nonsense aspects fall back.
+        const QJsonObject bottomBar{{"x", 0}, {"y", 0}, {"width", 1920}, {"height", 1080}, {"scale", 1.0},
+                                    {"reserved", QJsonArray{0, 0, 0, 40}}};
+        QCOMPARE(Desktop::cornerFor(bottomBar, 0).bottom() + 1, 1080 - 40 - 20);
+        QCOMPARE(Desktop::cornerFor(bottomBar, 0).size(), QSize(640, 360));
+
+        // Outside Hyprland it does nothing.
+        qunsetenv("HYPRLAND_INSTANCE_SIGNATURE");
+        Desktop desktop;
+        QVERIFY(!desktop.available());
+        desktop.setPictureInPicture(true);
+        QVERIFY(!desktop.pictureInPicture());
     }
 
     void theLastFileEndingIsReported()

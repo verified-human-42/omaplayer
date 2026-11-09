@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "actions.h"
+#include "desktop.h"
 #include "mpris.h"
 #include "player.h"
 #include "portalfilepicker.h"
@@ -89,6 +90,7 @@ int main(int argc, char *argv[]) {
     qCInfo(lcTiming, "mpv ready at %lld", QDateTime::currentMSecsSinceEpoch());
     Actions actions(&player);
     PortalFilePicker picker;
+    Desktop desktop;
 
     // Preferences go to mpv before the first file opens. Volume and mute
     // carry over between runs; positions are per file and kept by mpv.
@@ -133,6 +135,7 @@ int main(int argc, char *argv[]) {
     engine.rootContext()->setContextProperty("actions", &actions);
     engine.rootContext()->setContextProperty("picker", &picker);
     engine.rootContext()->setContextProperty("settings", &settings);
+    engine.rootContext()->setContextProperty("desktop", &desktop);
     engine.load(QUrl("qrc:/Main.qml"));
 
     qCInfo(lcTiming, "qml loaded at %lld", QDateTime::currentMSecsSinceEpoch());
@@ -176,27 +179,12 @@ int main(int argc, char *argv[]) {
 
     player.openPaths(items);
 
-    // While a video plays, the window wears Omarchy's "noidle" tag, which its
-    // Hyprland rules turn into an idle inhibitor: the screen stays on. (libmpv
-    // leaves keeping the screen awake to whoever owns the window.)
-    bool awake = false;
+    // While a video plays, the window wears Omarchy's "noidle" tag, so the
+    // screen stays on. (libmpv leaves keeping the screen awake to whoever
+    // owns the window.)
     auto keepAwake = [&] {
-        const bool wanted = settings.value("video/keepAwake").toBool() && !player.idle() && !player.paused()
-                            && player.videoSize().width() > 0;
-        if (wanted == awake || qEnvironmentVariableIsEmpty("HYPRLAND_INSTANCE_SIGNATURE"))
-            return;
-        awake = wanted;
-        const QString tag = QString(wanted ? "+" : "-") + "noidle";
-        const QString self = QString("pid:%1").arg(QCoreApplication::applicationPid());
-        auto *hyprctl = new QProcess(&app);
-        QObject::connect(hyprctl, &QProcess::finished, hyprctl, [hyprctl, tag, self] {
-            // Hyprland set up in Lua takes the call above; older setups the
-            // classic dispatcher.
-            if (QString::fromUtf8(hyprctl->readAll()).contains("error", Qt::CaseInsensitive))
-                QProcess::startDetached("hyprctl", {"dispatch", "tagwindow", tag, self});
-            hyprctl->deleteLater();
-        });
-        hyprctl->start("hyprctl", {"dispatch", QString("hl.dsp.window.tag({ tag = \"%1\", window = \"%2\" })").arg(tag, self)});
+        desktop.setAwake(settings.value("video/keepAwake").toBool() && !player.idle() && !player.paused()
+                         && player.videoSize().width() > 0);
     };
     QObject::connect(&player, &Player::pausedChanged, &app, keepAwake);
     QObject::connect(&player, &Player::idleChanged, &app, keepAwake);

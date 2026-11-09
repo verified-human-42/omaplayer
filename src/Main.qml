@@ -30,7 +30,7 @@ ApplicationWindow {
     readonly property bool fullscreen: visibility === Window.FullScreen
     // Windowed, the controls dock under the picture; in
     // fullscreen they float over it and step aside while you watch.
-    readonly property bool docked: !fullscreen && settings.values["interface/controls"] !== "floating"
+    readonly property bool docked: !fullscreen && !desktop.pictureInPicture && settings.values["interface/controls"] !== "floating"
     property bool pointerActive: true
     property bool infoVisible: false
     property bool playlistVisible: false
@@ -60,6 +60,9 @@ ApplicationWindow {
     }
 
     function toggleFullscreen() {
+        // Fullscreen from picture in picture goes through the tiled window.
+        if (desktop.pictureInPicture)
+            desktop.setPictureInPicture(false);
         win.visibility = fullscreen ? Window.Windowed : Window.FullScreen;
     }
 
@@ -79,8 +82,16 @@ ApplicationWindow {
         case "fullscreen":
             toggleFullscreen();
             break;
+        case "picture-in-picture":
+            if (fullscreen)
+                toggleFullscreen();
+            desktop.setPictureInPicture(!desktop.pictureInPicture,
+                                        player.videoSize.height > 0 ? player.videoSize.width / player.videoSize.height : 16 / 9);
+            break;
         case "exit-fullscreen":
-            if (sheetOpen)
+            if (desktop.pictureInPicture)
+                desktop.setPictureInPicture(false);
+            else if (sheetOpen)
                 toggleSheet();
             else if (fullscreen)
                 toggleFullscreen();
