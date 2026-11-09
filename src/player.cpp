@@ -314,8 +314,8 @@ void Player::handleEvent(const mpv_event &event) {
         if (event.error < 0) {
             if (kind == "playlist")
                 emit osd("playlist-edge");
-            else if (kind == "chapter")
-                emit osd("chapter-none");
+            else if (kind == "chapter" || kind == "subtitle-line")
+                emit osd(kind + "-none");
             else if (kind.startsWith("screenshot"))
                 emit osd("screenshot-failed");
             break;

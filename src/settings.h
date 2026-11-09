@@ -64,6 +64,7 @@ public:
     Q_INVOKABLE void resetAllKeys();
     // Every setting and key back to how it came, undoable until the page closes.
     Q_INVOKABLE void resetAll();
+    Q_INVOKABLE QString lastFile() const;
 
     Q_INVOKABLE static QString defaultScreenshotFolder();
     static QStringList mediaTypes();

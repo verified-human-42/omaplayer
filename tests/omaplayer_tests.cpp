@@ -217,17 +217,17 @@ private slots:
         Actions actions(&player);
         {
             Settings settings(&player, &actions, file);
-            // M belongs to Mute; giving it to Stop takes it from Mute.
-            QCOMPARE(settings.bindKey("stop", "M"), QString("mute"));
-            QCOMPARE(actions.keys("stop"), QStringList{"M"});
+            // M belongs to Mute; giving it to Shuffle takes it from Mute.
+            QCOMPARE(settings.bindKey("shuffle", "M"), QString("mute"));
+            QCOMPARE(actions.keys("shuffle"), QStringList{"M"});
             QVERIFY(actions.keys("mute").isEmpty());
             settings.bindKey("open-file", "Ctrl+;");
             QCOMPARE(settings.customBindings(), 3);
         }
         Settings reopened(&player, &actions, file);
-        QCOMPARE(actions.keys("stop"), QStringList{"M"});
+        QCOMPARE(actions.keys("shuffle"), QStringList{"M"});
         QCOMPARE(actions.keys("open-file"), (QStringList{"Ctrl+O", "Ctrl+;"}));
-        QCOMPARE(actions.shortcut("stop"), QString("M"));
+        QCOMPARE(actions.shortcut("shuffle"), QString("M"));
 
         // Taking a binding back to the layout's keys stops counting as custom.
         reopened.unbindKey("open-file", "Ctrl+;");
@@ -471,12 +471,19 @@ private slots:
             {"chapter-previous", "Ctrl+PgUp"}, {"chapter-next", "Ctrl+PgDown"},
             {"screenshot", "Ctrl+E"}, {"copy-frame", "Ctrl+C"},
             {"brightness-down", "W"}, {"brightness-up", "E"}, {"contrast-down", "R"}, {"contrast-up", "T"},
-            {"saturation-down", "Y"}, {"saturation-up", "U"}, {"picture-reset", "Backspace"},
-            {"audio-earlier", "<"}, {"audio-later", ">"},
+            {"saturation-down", "Y"}, {"saturation-up", "U"}, {"hue-down", "I"}, {"hue-up", "O"}, {"picture-reset", "Q"},
+            {"audio-earlier", "<"}, {"audio-later", ">"}, {"fill", "Ctrl+Return"}, {"fullscreen", "Alt+Return"},
+            {"seek-start", "Backspace"}, {"seek-middle", "Ctrl+Backspace"}, {"seek-near-end", "Shift+Backspace"},
+            {"seek-back-minute", "Shift+Left"}, {"seek-forward-5-minutes", "Ctrl+Alt+Right"}, {"go-to-time", "G"},
+            {"sub-line-previous", "Home"}, {"sub-line-next", "End"}, {"sub-line-replay", "Ctrl+Home"},
+            {"next-subtitle", "L"}, {"next-audio", "A"}, {"sub-sync-reset", "/"}, {"mirror", "Ctrl+Z"},
+            {"reopen-last", "Ctrl+Y"}, {"stop", "F4"}, {"quit", "Ctrl+Q"}, {"normalize", "Shift+N"},
             {"sub-up", "Alt+Up"}, {"sub-down", "Alt+Down"}, {"sub-bigger", "Alt+PgUp"}, {"sub-smaller", "Alt+PgDown"},
         };
         for (auto it = expected.begin(); it != expected.end(); ++it)
             QVERIFY2(actions.keys(it.key()).contains(it.value()), qPrintable(it.key()));
+        // PotPlayer's Q resets the picture; quitting is Ctrl+Q.
+        QVERIFY(!actions.keys("quit").contains("Q"));
         // Menu-only actions exist too, without keys.
         for (const auto &id : {"aspect", "fill", "rotate", "next-second-subtitle", "audio-sync-reset", "repeat"})
             QVERIFY2(!actions.text(id).isEmpty(), id);
@@ -576,8 +583,8 @@ private slots:
         settings.beginSession();
         settings.set("video/smooth", true);
         settings.set("subtitles/second", "en");
-        settings.bindKey("stop", "Ctrl+;");
-        QVERIFY(settings.changedKeys().contains("keys/stop"));
+        settings.bindKey("shuffle", "Ctrl+;");
+        QVERIFY(settings.changedKeys().contains("keys/shuffle"));
         settings.resetAll();
         QCOMPARE(settings.value("video/smooth").toBool(), false);
         QCOMPARE(settings.value("subtitles/second").toString(), QString());
@@ -585,12 +592,12 @@ private slots:
         QVERIFY(settings.changedKeys().isEmpty());
 
         // Undo all brings shortcuts back too.
-        settings.bindKey("stop", "Ctrl+;");
+        settings.bindKey("shuffle", "Ctrl+;");
         settings.beginSession();
         settings.resetAll();
-        QCOMPARE(settings.changedKeys(), QStringList{"keys/stop"});
+        QCOMPARE(settings.changedKeys(), QStringList{"keys/shuffle"});
         settings.undoAll();
-        QCOMPARE(actions.keys("stop"), QStringList{"Ctrl+;"});
+        QCOMPARE(actions.keys("shuffle"), QStringList{"Ctrl+;"});
         QVERIFY(settings.changedKeys().isEmpty());
     }
 
@@ -753,7 +760,7 @@ private slots:
         QVERIFY(loadPaused(player, clip));
         actions.trigger("audio-later");
         actions.trigger("audio-later");
-        QTRY_VERIFY(qAbs(player.get("audio-delay").toDouble() - 0.2) < 0.001);
+        QTRY_VERIFY(qAbs(player.get("audio-delay").toDouble() - 0.1) < 0.001);
         actions.trigger("audio-sync-reset");
         QTRY_COMPARE(player.get("audio-delay").toDouble(), 0.0);
         actions.trigger("sub-up");
@@ -800,7 +807,7 @@ private slots:
             if (spec.id == "screenshot") expected = {"screenshot"};
             if (spec.id == "copy-frame") expected = {"screenshot-copy"};
             if (spec.id == "picture-reset") expected = {"picture-reset"};
-            if (spec.osd == "chapter") expected.append("chapter-none");
+            if (spec.osd == "chapter" || spec.osd == "subtitle-line") expected.append(spec.osd + "-none");
             QVERIFY2(expected.contains(kind), qPrintable(QString("%1 said %2").arg(spec.id, kind)));
         }
         // Then the ones that leave this file or stop it.

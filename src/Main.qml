@@ -98,6 +98,17 @@ ApplicationWindow {
         case "shortcuts":
             toggleSheet();
             break;
+        case "reopen-last":
+            var last = settings.lastFile();
+            if (last !== "")
+                player.openPaths([last]);
+            else
+                showOsd("reopen-none");
+            break;
+        case "normalize":
+            settings.set("audio/normalize", !settings.values["audio/normalize"]);
+            showOsd("normalize");
+            break;
         case "go-to-time":
             if (!player.idle && player.seekable) {
                 goToLoader.active = true;
@@ -203,6 +214,25 @@ ApplicationWindow {
             var title = at >= 0 && at < chapters.length ? chapters[at].title : "";
             osd.show({ label: qsTr("Chapter"), value: (at + 1) + " / " + chapters.length + (title ? "  ·  " + title : "") });
             break;
+        case "subtitle-line":
+            var line = player.get("sub-text") || "";
+            osd.show({ icon: "subtitles", label: Format.time(player.position), value: line.replace(/\n/g, " ") });
+            break;
+        case "subtitle-line-none":
+            osd.show({ label: qsTr("Subtitles"), value: qsTr("No more lines") });
+            break;
+        case "mirror":
+            osd.show({ label: qsTr("Mirror"), value: String(player.get("vf") ? JSON.stringify(player.get("vf")) : "").indexOf("hflip") >= 0 ? qsTr("On") : qsTr("Off") });
+            break;
+        case "hue":
+            osd.show({ label: qsTr("Hue"), value: percent(player.get("hue")) });
+            break;
+        case "normalize":
+            osd.show({ label: qsTr("Even out loudness"), value: settings.values["audio/normalize"] ? qsTr("On") : qsTr("Off") });
+            break;
+        case "reopen-none":
+            osd.show({ label: qsTr("Reopen"), value: qsTr("No recent file") });
+            break;
         case "chapter-none":
             osd.show({ label: qsTr("Chapter"), value: qsTr("No more chapters") });
             break;
@@ -252,7 +282,7 @@ ApplicationWindow {
             osd.show({ icon: "video", label: qsTr("Contrast"), value: percent(player.get("contrast")) });
             break;
         case "saturation":
-            osd.show({ icon: "video", label: qsTr("Color"), value: percent(player.get("saturation")) });
+            osd.show({ icon: "video", label: qsTr("Saturation"), value: percent(player.get("saturation")) });
             break;
         case "picture-reset":
             osd.show({ value: qsTr("Picture adjustments reset") });

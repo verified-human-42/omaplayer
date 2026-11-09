@@ -24,6 +24,17 @@ Settings::Settings(Player *player, Actions *actions, const QString &file, QObjec
         m_values.insert(spec.key, normalize(spec, m_store->value(spec.key, spec.fallback)));
     m_session = m_values;
 
+    // The last files played, newest first, for Reopen Last File.
+    connect(m_player, &Player::fileLoaded, this, [this] {
+        const QString path = m_player->path();
+        if (path.isEmpty())
+            return;
+        QStringList recent = m_store->value("state/recent").toStringList();
+        recent.removeAll(path);
+        recent.prepend(path);
+        m_store->setValue("state/recent", recent.mid(0, 2));
+    });
+
 
     // One line per key, so any key, ";" and "," included, round-trips.
     m_store->beginGroup("keys");
@@ -439,4 +450,12 @@ void Settings::makeDefaultPlayer() {
         }
     });
     assign->start("xdg-mime", QStringList{"default", "omaplayer.desktop"} + types);
+}
+
+// What Reopen Last File opens: the newest file that isn't playing now.
+QString Settings::lastFile() const {
+    for (const auto &path : m_store->value("state/recent").toStringList())
+        if (path != m_player->path() || m_player->idle())
+            return path;
+    return {};
 }

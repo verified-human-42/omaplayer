@@ -88,25 +88,28 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | | |
 |---|---|
 | `Space` | Play / pause |
-| `←` `→` / `Ctrl+←` `Ctrl+→` | Seek 5 s / 30 s (both adjustable) |
-| `Ctrl+G` | Go to a time |
+| `←` `→` · `Ctrl+←` `Ctrl+→` · `Shift+←` `Shift+→` | Seek 5 s · 30 s · 1 min (adjustable) |
+| `Backspace` · `Ctrl+Backspace` · `Shift+Backspace` | To the start · middle · 30 s before the end |
+| `G` / `Ctrl+G` | Go to a time |
 | `[` `]` · `\` | A-B repeat: start, end · off |
-| `↑` `↓` · `M` | Volume · mute |
 | `PgUp` `PgDn` · `Ctrl+PgUp` `Ctrl+PgDn` | Previous / next file · chapter |
-| `D` `F` | Previous / next frame |
-| `X` `C` `Z` | Slower / faster / normal speed |
-| `<` `>` | Audio earlier / later |
-| `,` `.` · `Alt+H` | Subtitles earlier / later · show or hide |
+| `D` `F` · `X` `C` `Z` | Frame back / forward · slower / faster / normal speed |
+| `↑` `↓` · `M` · `A` | Volume · mute · next audio track |
+| `<` `>` · `Shift+N` | Audio sync · even out loudness |
+| `L` · `Alt+H` | Next subtitle · show or hide |
+| `Home` `End` · `Ctrl+Home` | Previous / next subtitle line · replay this one |
+| `,` `.` · `/` | Subtitles earlier / later · reset sync |
 | `Alt+↑` `Alt+↓` · `Alt+PgUp` `Alt+PgDn` | Subtitles up / down · bigger / smaller |
-| `W` `E` · `R` `T` · `Y` `U` · `Backspace` | Brightness · contrast · color · reset |
-| `Ctrl+E` · `Ctrl+C` | Save a screenshot · copy the frame |
-| `Enter` / `F11` · `Esc` | Fullscreen · leave it |
+| `W` `E` · `R` `T` · `Y` `U` · `I` `O` · `Q` | Brightness · contrast · saturation · hue · reset |
+| `Ctrl+Enter` · `Ctrl+F6` · `Ctrl+Z` | Fill the screen · aspect ratio · mirror |
+| `Ctrl+E` / `K` · `Ctrl+C` | Save a screenshot · copy the frame |
+| `Enter` / `Alt+Enter` / `F11` · `Esc` | Fullscreen · leave it |
 | `Tab` | Playback info |
 | `F6` / `Ctrl+L` | Playlist |
 | `F5` / `Ctrl+,` | Settings |
-| `Ctrl+O` · `Ctrl+V` | Open a file · open a path or URL from the clipboard |
+| `Ctrl+O` · `Ctrl+V` · `Ctrl+Y` | Open a file · open from the clipboard · reopen the last file |
+| `F4` · `Ctrl+Q` | Close the file · quit |
 | `?` | Every shortcut |
-| `Q` / `Ctrl+Q` | Quit |
 
 Mouse: click to pause, double-click for fullscreen, wheel for volume,
 right-click for the menu (aspect ratio, rotate, repeat, and the rest live
