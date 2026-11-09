@@ -54,8 +54,25 @@ Popup {
                               description: qsTr("A file reopens at the moment you stopped watching it.") },
                             { key: "playback/folderPlaylist", type: "switch", label: qsTr("Play the whole folder"),
                               description: qsTr("Opening one file queues the videos and music beside it.") },
-                            { key: "playback/keepOpen", type: "switch", label: qsTr("Hold the last frame"),
-                              description: qsTr("The last file stays on its final frame instead of closing.") },
+                            { key: "playback/oneWindow", type: "switch", label: qsTr("One window"),
+                              description: qsTr("Files opened from the file manager play in the window that's already open.") },
+                            { key: "playback/atEnd", type: "choice", label: qsTr("When the last file ends"),
+                              description: qsTr("Repeat in the playlist or the menu keeps it going instead."),
+                              options: [{ value: "hold", label: qsTr("Hold the frame") }, { value: "clear", label: qsTr("Start screen") },
+                                        { value: "quit", label: qsTr("Close") }] },
+                        ]
+                    },
+                    {
+                        title: qsTr("Seeking"), note: qsTr("How far the arrow keys jump."),
+                        rows: [
+                            { key: "playback/seekStep", type: "choice", label: qsTr("Arrow keys"),
+                              description: qsTr("Left and Right."),
+                              options: ["1", "3", "5", "10"].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
+                            { key: "playback/seekLongStep", type: "choice", label: qsTr("With Ctrl"),
+                              description: qsTr("Ctrl+Left and Ctrl+Right."),
+                              options: ["10", "30", "60"].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
+                            { key: "playback/exactSeek", type: "switch", label: qsTr("Exact seeking"),
+                              description: qsTr("Lands on the exact frame instead of the nearest keyframe. A little slower.") },
                         ]
                     },
                     {
@@ -91,6 +108,32 @@ Popup {
                                         { value: "sharp", label: qsTr("Sharp") }] },
                             { key: "video/deband", type: "switch", label: qsTr("Deband"),
                               description: qsTr("Smooths the color steps that show in dark, compressed scenes.") },
+                            { key: "video/deinterlace", type: "switch", label: qsTr("Deinterlace"),
+                              description: qsTr("Removes the comb lines from TV recordings and DVDs. Other video is left alone.") },
+                            { key: "video/keepAwake", type: "switch", label: qsTr("Keep the screen awake"),
+                              description: qsTr("The screen doesn't dim or turn off while a video plays.") },
+                        ]
+                    },
+                    {
+                        title: qsTr("Streams"), note: qsTr("Videos opened from YouTube and other sites."),
+                        rows: [
+                            { key: "video/streamQuality", type: "choice", label: qsTr("Quality"),
+                              description: qsTr("The highest resolution fetched. Lower saves data on slow connections."),
+                              options: [{ value: "best", label: qsTr("Best") }].concat(["2160", "1440", "1080", "720", "480"].map(function (n) {
+                                  return { value: n, label: n + "p" }; })) },
+                        ]
+                    },
+                    {
+                        title: qsTr("Screenshots"), note: qsTr("Ctrl+E saves the frame on screen, Ctrl+C copies it."),
+                        rows: [
+                            { key: "video/screenshotFormat", type: "choice", label: qsTr("Format"),
+                              description: qsTr("PNG keeps every pixel; JPEG and WebP are smaller."),
+                              options: [{ value: "png", label: "PNG" }, { value: "jpg", label: "JPEG" }, { value: "webp", label: "WebP" }] },
+                            { key: "video/screenshotSubtitles", type: "switch", label: qsTr("Include subtitles"),
+                              description: qsTr("The frame as you see it, subtitles and all.") },
+                            { key: "video/screenshotFolder", type: "text", label: qsTr("Folder"),
+                              description: qsTr("Empty saves where Omarchy's screenshots go."),
+                              placeholder: settings.defaultScreenshotFolder() },
                         ]
                     },
                 ]
@@ -105,6 +148,19 @@ Popup {
                               description: qsTr("For quiet recordings. Past 100% the sound can clip.") },
                             { key: "audio/normalize", type: "switch", label: qsTr("Even out loudness"),
                               description: qsTr("Lifts quiet dialogue and tames loud scenes.") },
+                            { key: "audio/rememberVolume", type: "switch", label: qsTr("Remember the volume"),
+                              description: qsTr("Each launch starts at the volume you left it at.") },
+                        ]
+                    },
+                    {
+                        title: qsTr("Output"), note: qsTr("Where the sound goes."),
+                        rows: [
+                            { key: "audio/device", type: "menu", label: qsTr("Output device"),
+                              description: qsTr("System default follows the output picked in Omarchy."), options: audioDevices() },
+                            { key: "audio/stereo", type: "switch", label: qsTr("Stereo downmix"),
+                              description: qsTr("Folds surround sound into two channels, so dialogue stays clear on headphones and laptop speakers.") },
+                            { key: "audio/passthrough", type: "switch", label: qsTr("Passthrough to a receiver"),
+                              description: qsTr("Sends Dolby and DTS untouched over HDMI or S/PDIF for an AV receiver to decode. Silent without one.") },
                         ]
                     },
                     {
@@ -129,6 +185,9 @@ Popup {
                             { key: "subtitles/language", type: "text", label: qsTr("Preferred languages"),
                               description: qsTr("Language codes in order, separated by commas. Empty follows Omarchy's language."),
                               placeholder: settingsLanguageHint },
+                            { key: "subtitles/second", type: "text", label: qsTr("Second subtitle"),
+                              description: qsTr("A language code to show a second subtitle at the top, for watching in two languages. Empty for none."),
+                              placeholder: "en" },
                         ]
                     },
                     {
@@ -136,7 +195,7 @@ Popup {
                         note: qsTr("Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish."),
                         rows: [
                             { key: "radio:encoding:auto", type: "radio", setting: "subtitles/encoding", value: "auto",
-                              label: qsTr("Auto"), description: qsTr("Recommended") },
+                              label: qsTr("Auto"), description: qsTr("Default. Reads each file and works out its encoding.") },
                             { key: "radio:encoding:utf-8", type: "radio", setting: "subtitles/encoding", value: "utf-8", label: "UTF-8", description: "Unicode" },
                             { key: "radio:encoding:korean", type: "radio", setting: "subtitles/encoding", value: "korean", label: "한국어", description: qsTr("Korean") + " · CP949" },
                             { key: "radio:encoding:japanese", type: "radio", setting: "subtitles/encoding", value: "japanese", label: "日本語", description: qsTr("Japanese") + " · Shift-JIS" },
@@ -149,6 +208,15 @@ Popup {
                         rows: [
                             { key: "subtitles/scale", type: "level", label: qsTr("Size"),
                               description: qsTr("Relative to the subtitles' own size."), minimum: 0.5, maximum: 2, step: 0.05 },
+                            { key: "subtitles/lift", type: "level", label: qsTr("Height"),
+                              description: qsTr("How far above the bottom of the picture they sit."), minimum: 0, maximum: 0.3, step: 0.02 },
+                            { key: "subtitles/font", type: "text", label: qsTr("Font"),
+                              description: qsTr("A font family installed on this computer. Empty uses the system's."),
+                              placeholder: "sans-serif" },
+                            { key: "subtitles/background", type: "switch", label: qsTr("Box behind the text"),
+                              description: qsTr("A dark box instead of an outline, for subtitles over bright scenes.") },
+                            { key: "subtitles/restyle", type: "switch", label: qsTr("Restyle styled subtitles"),
+                              description: qsTr("Styled (ASS) subtitles, like most anime releases, take the look above too.") },
                         ]
                     },
                 ]
@@ -167,6 +235,10 @@ Popup {
                               options: [1, 2, 3, 5].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
                             { key: "interface/remaining", type: "switch", label: qsTr("Count down"),
                               description: qsTr("The clock shows the time left. Clicking the clock switches it too.") },
+                            { key: "interface/startFullscreen", type: "switch", label: qsTr("Start in fullscreen"),
+                              description: qsTr("Opening a file fills the screen. Esc goes back to the window.") },
+                            { key: "interface/osd", type: "switch", label: qsTr("Corner messages"),
+                              description: qsTr("The file name, volume, seeking, and every other change, in the top-left corner.") },
                         ]
                     },
                 ]
@@ -195,7 +267,10 @@ Popup {
                 ]
             },
             {
-                id: "language", section: qsTr("Interface"), title: qsTr("Language"), icon: "language",
+                // In English too, so anyone can find their way back from a
+                // language they can't read.
+                id: "language", section: qsTr("Interface"),
+                title: qsTr("Language") === "Language" ? "Language" : qsTr("Language") + " / Language", icon: "language",
                 groups: [
                     {
                         title: qsTr("Language"), note: qsTr("The language of menus, messages, and settings."),
@@ -232,6 +307,19 @@ Popup {
                               url: folderUrl(player.get("watch-later-dir") + "/") },
                         ]
                     },
+                    {
+                        title: qsTr("System"), note: qsTr("Omaplayer and the rest of the desktop."),
+                        rows: [
+                            { key: "action:default-player", type: "action", command: "makeDefaultPlayer",
+                              button: settings.defaultPlayer ? qsTr("Done") : qsTr("Make default"),
+                              label: qsTr("Default player"),
+                              description: settings.defaultPlayer ? qsTr("Videos and music open in Omaplayer.")
+                                                                  : qsTr("Open videos and music in Omaplayer from the file manager and browser.") },
+                            { key: "action:reset-all", type: "action", command: "resetAll", button: qsTr("Reset"),
+                              label: qsTr("Reset all settings"),
+                              description: qsTr("Every setting and shortcut back to how it came. Undo works until you close this page.") },
+                        ]
+                    },
                 ]
             },
         ];
@@ -261,7 +349,7 @@ Popup {
         var list = [];
         groups.forEach(function (group) {
             group.rows.forEach(function (row) {
-                if (["switch", "choice", "level", "text", "binding", "action", "radio"].indexOf(row.type) >= 0)
+                if (["switch", "choice", "menu", "level", "text", "binding", "action", "radio"].indexOf(row.type) >= 0)
                     list.push(row);
             });
         });
@@ -393,6 +481,27 @@ Popup {
 
     onClosed: capturing = ""
 
+    // The sound outputs, for a menu. mpv lists each output once per
+    // sound system (PipeWire, Pulse, ALSA); Omarchy plays through PipeWire,
+    // so its outputs are the ones listed, unless there are none.
+    function audioDevices() {
+        var all = player.get("audio-device-list") || [];
+        var prefix = ["pipewire/", "pulse/", "alsa/"].find(function (system) {
+            return all.some(function (device) { return device.name.startsWith(system); });
+        }) || "";
+        var devices = all.filter(function (device) {
+            return device.name === "auto" || (prefix !== "" && device.name.startsWith(prefix));
+        });
+        var options = devices.map(function (device) {
+            return { value: device.name, label: device.name === "auto" ? qsTr("System default") : device.description };
+        });
+        // One that was picked and is now unplugged still shows as picked.
+        var chosen = settings.values["audio/device"];
+        if (!options.some(function (option) { return option.value === chosen; }))
+            options.push({ value: chosen, label: qsTr("%1 (not connected)").arg(chosen.substring(chosen.indexOf("/") + 1)) });
+        return options;
+    }
+
     function folderUrl(path) {
         return "file://" + String(path).substring(0, String(path).lastIndexOf("/"));
     }
@@ -402,6 +511,7 @@ Popup {
 
     onOpened: {
         settings.beginSession();
+        settings.checkDefaultPlayer();
         goToPage(pageIndex);
         body.forceActiveFocus();
     }

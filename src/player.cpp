@@ -4,8 +4,10 @@
 #include <QCollator>
 #include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QImage>
 #include <QLoggingCategory>
 #include <QStandardPaths>
 #include <QTimer>
@@ -37,6 +39,7 @@ enum Observed : quint64 {
     Tracks,
     Playlist,
     Repeat,
+    RepeatFile,
 };
 
 QVariant fromNode(const mpv_node &node) {
@@ -98,6 +101,12 @@ QByteArray toMpv(const QVariant &value) {
     default:
         return value.toString().toUtf8();
     }
+}
+
+// A loop option, read as text ("inf", "no") or as a node (true, false, 3).
+bool looping(const QVariant &value) {
+    const QString text = value.toString();
+    return !(text.isEmpty() || text == "no" || text == "false" || text == "0");
 }
 
 // Commands that leave the current file, after which its position is saved.
@@ -186,6 +195,7 @@ Player::Player(Output output, QObject *parent) : QObject(parent), m_videoReady(o
     mpv_observe_property(m_mpv, Tracks, "track-list", MPV_FORMAT_NODE);
     mpv_observe_property(m_mpv, Playlist, "playlist", MPV_FORMAT_NODE);
     mpv_observe_property(m_mpv, Repeat, "loop-playlist", MPV_FORMAT_STRING);
+    mpv_observe_property(m_mpv, RepeatFile, "loop-file", MPV_FORMAT_STRING);
 
     // OMAPLAYER_MPV_LOG=v (or debug, trace) shows mpv's own log, timestamped.
     const QByteArray logLevel = qgetenv("OMAPLAYER_MPV_LOG");
@@ -240,6 +250,8 @@ void Player::handleEvent(const mpv_event &event) {
         break;
     case MPV_EVENT_START_FILE: {
         qCInfo(lcTiming, "start file at %lld", QDateTime::currentMSecsSinceEpoch());
+        m_endedAtEof = false;
+        m_secondChosen = false;
         const QString path = get("path").toString();
         if (!path.isEmpty() && path != m_path) {
             m_path = path;
@@ -278,6 +290,7 @@ void Player::handleEvent(const mpv_event &event) {
         } else if (end->reason == MPV_END_FILE_REASON_EOF && !m_path.isEmpty()) {
             // Watched to the end, so next time it starts from the top.
             sendCommand({"delete-watch-later-config", m_path.toUtf8()});
+            m_endedAtEof = true;
         }
         break;
     }
@@ -288,7 +301,21 @@ void Player::handleEvent(const mpv_event &event) {
         if (event.error < 0) {
             if (kind == "playlist")
                 emit osd("playlist-edge");
+            else if (kind == "chapter")
+                emit osd("chapter-none");
+            else if (kind.startsWith("screenshot"))
+                emit osd("screenshot-failed");
             break;
+        }
+        if (kind == "screenshot-copy") {
+            // The frame went to a file first; the clipboard keeps its own copy.
+            const QImage frame(m_lastScreenshot);
+            QFile::remove(m_lastScreenshot);
+            if (frame.isNull()) {
+                emit osd("screenshot-failed");
+                break;
+            }
+            QGuiApplication::clipboard()->setImage(frame);
         }
         refresh(kind);
         emit osd(kind);
@@ -314,7 +341,13 @@ void Player::handleProperty(quint64 id, const QVariant &value) {
     };
 
     switch (id) {
-    case Idle: update(m_idle, value.toBool(), &Player::idleChanged); break;
+    case Idle:
+        update(m_idle, value.toBool(), &Player::idleChanged);
+        if (m_idle && m_endedAtEof) {
+            m_endedAtEof = false;
+            emit finished();
+        }
+        break;
     case Pause: update(m_paused, value.toBool(), &Player::pausedChanged); break;
     case Title: update(m_title, value.toString(), &Player::titleChanged); break;
     case Path:
@@ -332,9 +365,13 @@ void Player::handleProperty(quint64 id, const QVariant &value) {
     case PlaylistCount: update(m_playlistCount, value.toInt(), &Player::playlistChanged); break;
     case Width: update(m_videoSize, QSize(value.toInt(), m_videoSize.height()), &Player::videoSizeChanged); break;
     case Height: update(m_videoSize, QSize(m_videoSize.width(), value.toInt()), &Player::videoSizeChanged); break;
-    case Tracks: update(m_tracks, value.toList(), &Player::tracksChanged); break;
+    case Tracks:
+        update(m_tracks, value.toList(), &Player::tracksChanged);
+        chooseSecondSubtitle();
+        break;
     case Playlist: update(m_playlist, value.toList(), &Player::playlistChanged); break;
-    case Repeat: update(m_repeat, value.toString() != "no" && !value.toString().isEmpty(), &Player::repeatChanged); break;
+    case Repeat: update(m_loopPlaylist, looping(value), &Player::repeatChanged); break;
+    case RepeatFile: update(m_loopFile, looping(value), &Player::repeatChanged); break;
     default: break;
     }
 }
@@ -355,10 +392,13 @@ void Player::refresh(const QString &kind) {
         {"playlist", {PlaylistPos, "playlist-pos"}},
         {"playlist-count", {PlaylistCount, "playlist-count"}},
         {"repeat", {Repeat, "loop-playlist"}},
+        {"repeat-file", {RepeatFile, "loop-file"}},
     };
     const auto source = sources.find(kind);
     if (source != sources.end())
         handleProperty(source->first, get(QString::fromLatin1(source->second)));
+    if (kind == "repeat")
+        refresh("repeat-file");
 }
 
 void Player::rememberPosition() {
@@ -678,4 +718,116 @@ void Player::reportError(const QString &message) {
 
 void Player::clearError() {
     reportError({});
+}
+
+void Player::cycleRepeat() {
+    if (m_loopFile) {
+        set("loop-file", "no");
+        command({"set", "loop-playlist", "inf"}, "repeat");
+    } else if (m_loopPlaylist) {
+        command({"set", "loop-playlist", "no"}, "repeat");
+    } else {
+        command({"set", "loop-file", "inf"}, "repeat");
+    }
+}
+
+void Player::setLoopPoint(const QString &which) {
+    if (m_idle)
+        return;
+    if (which == "clear") {
+        set("ab-loop-a", "no");
+        command({"set", "ab-loop-b", "no"}, "ab-loop");
+        return;
+    }
+    const double now = get("time-pos").toDouble();
+    const QVariant a = get("ab-loop-a"), b = get("ab-loop-b");
+    const bool hasA = a.typeId() == QMetaType::Double, hasB = b.typeId() == QMetaType::Double;
+    if (which == "a") {
+        // A new start after the end starts a new loop.
+        if (hasB && b.toDouble() <= now)
+            set("ab-loop-b", "no");
+        command({"set", "ab-loop-a", now}, "ab-loop");
+    } else {
+        if (hasA && a.toDouble() >= now)
+            return;
+        if (!hasA)
+            set("ab-loop-a", 0.0);
+        command({"set", "ab-loop-b", now}, "ab-loop");
+    }
+}
+
+void Player::setScreenshotOptions(const QString &folder, bool subtitles, const QString &format) {
+    m_screenshotFolder = folder;
+    m_screenshotSubtitles = subtitles;
+    m_screenshotFormat = format;
+}
+
+void Player::screenshot(bool toClipboard) {
+    if (m_idle || !m_mpv)
+        return;
+    QString path;
+    if (toClipboard) {
+        const QString cache = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
+        QDir().mkpath(QDir(cache).filePath("omaplayer"));
+        path = QDir(cache).filePath("omaplayer/frame.png");
+    } else {
+        QString folder = m_screenshotFolder;
+        if (folder.startsWith("~/"))
+            folder = QDir::home().filePath(folder.mid(2));
+        if (!QDir().mkpath(folder)) {
+            emit osd("screenshot-failed");
+            return;
+        }
+        // "Movie 01.02.03.png", named after the file and the moment.
+        QString name = m_path.contains("://") ? m_title : QFileInfo(m_path).completeBaseName();
+        name.replace('/', '-');
+        const int seconds = int(get("time-pos").toDouble());
+        const QString stamp = QString("%1.%2.%3").arg(seconds / 3600, 2, 10, QChar('0'))
+                                  .arg(seconds / 60 % 60, 2, 10, QChar('0')).arg(seconds % 60, 2, 10, QChar('0'));
+        const QString base = QDir(folder).filePath(name + " " + stamp);
+        path = base + "." + m_screenshotFormat;
+        for (int n = 2; QFileInfo::exists(path); ++n)
+            path = QString("%1 (%2).%3").arg(base).arg(n).arg(m_screenshotFormat);
+    }
+    m_lastScreenshot = path;
+    command({"screenshot-to-file", path, m_screenshotSubtitles ? "subtitles" : "video"},
+            toClipboard ? "screenshot-copy" : "screenshot");
+}
+
+void Player::resetPicture() {
+    for (const char *name : {"brightness", "contrast", "saturation", "gamma", "panscan", "video-zoom",
+                             "video-pan-x", "video-pan-y", "video-rotate"})
+        set(name, 0);
+    command({"set", "video-aspect-override", "no"}, "picture-reset");
+}
+
+void Player::setSecondLanguage(const QStringList &codes) {
+    m_secondLanguage = codes;
+    m_secondChosen = false;
+    if (codes.isEmpty())
+        set("secondary-sid", "no");
+    else
+        chooseSecondSubtitle();
+}
+
+// The first subtitle in the second language that isn't already showing goes
+// up top. Tracks arrive in steps (the file's own, then the files beside it),
+// so this runs on each change until one is found.
+void Player::chooseSecondSubtitle() {
+    if (m_secondLanguage.isEmpty() || m_secondChosen || m_idle)
+        return;
+    for (const auto &item : m_tracks) {
+        const QVariantMap track = item.toMap();
+        if (track.value("type").toString() != "sub" || track.value("selected").toBool())
+            continue;
+        const QString code = track.value("lang").toString().toLower();
+        if (code.isEmpty())
+            continue;
+        for (const auto &want : m_secondLanguage)
+            if (want == code || code.section('-', 0, 0) == want || want.section('-', 0, 0) == code) {
+                m_secondChosen = true;
+                set("secondary-sid", track.value("id").toLongLong());
+                return;
+            }
+    }
 }

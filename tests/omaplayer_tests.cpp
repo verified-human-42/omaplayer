@@ -1,7 +1,11 @@
+#include <QClipboard>
 #include <QDir>
 #include <QFile>
+#include <QGuiApplication>
+#include <QImage>
 #include <QKeySequence>
 #include <QProcess>
+#include <QSettings>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -456,7 +460,327 @@ private slots:
         QVERIFY(!player.opening());
     }
 
+    // PotPlayer's features, one by one
+
+    void newActionsHaveTheirKeys()
+    {
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        const QHash<QString, QString> expected = {
+            {"loop-start", "["}, {"loop-end", "]"}, {"loop-clear", "\\"}, {"go-to-time", "Ctrl+G"},
+            {"chapter-previous", "Ctrl+PgUp"}, {"chapter-next", "Ctrl+PgDown"},
+            {"screenshot", "Ctrl+E"}, {"copy-frame", "Ctrl+C"},
+            {"brightness-down", "W"}, {"brightness-up", "E"}, {"contrast-down", "R"}, {"contrast-up", "T"},
+            {"saturation-down", "Y"}, {"saturation-up", "U"}, {"picture-reset", "Backspace"},
+            {"audio-earlier", "<"}, {"audio-later", ">"},
+            {"sub-up", "Alt+Up"}, {"sub-down", "Alt+Down"}, {"sub-bigger", "Alt+PgUp"}, {"sub-smaller", "Alt+PgDown"},
+        };
+        for (auto it = expected.begin(); it != expected.end(); ++it)
+            QVERIFY2(actions.keys(it.key()).contains(it.value()), qPrintable(it.key()));
+        // Menu-only actions exist too, without keys.
+        for (const auto &id : {"aspect", "fill", "rotate", "next-second-subtitle", "audio-sync-reset", "repeat"})
+            QVERIFY2(!actions.text(id).isEmpty(), id);
+        // The start screen keeps to everyday keys.
+        int everyday = 0;
+        for (const auto &entry : actions.list())
+            everyday += entry.toMap().value("everyday").toBool() && !entry.toMap().value("keys").toStringList().isEmpty();
+        QVERIFY(everyday <= 30);
+    }
+
+    void seekStepsFollowSettings()
+    {
+        QTemporaryDir dir;
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        Settings settings(&player, &actions, dir.filePath("settings.ini"));
+        settings.applyAll();
+        QCOMPARE(actions.text("seek-forward"), QString("Forward 5 Seconds"));
+        settings.set("playback/seekStep", "10");
+        settings.set("playback/seekLongStep", "60");
+        QCOMPARE(actions.text("seek-forward"), QString("Forward 10 Seconds"));
+        QCOMPARE(actions.text("seek-back-long"), QString("Back 60 Seconds"));
+
+        const QString clip = makeClip(dir.filePath("clip.mkv"), 20);
+        QVERIFY(loadPaused(player, clip));
+        actions.trigger("seek-forward");
+        QTRY_VERIFY_WITH_TIMEOUT(qAbs(player.position() - 10) < 1.5, 5000);
+    }
+
+    void newSettingsReachMpv()
+    {
+        QTemporaryDir dir;
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        Settings settings(&player, &actions, dir.filePath("settings.ini"));
+        settings.applyAll();
+        auto expect = [&](const char *property, const QString &value) {
+            QTRY_COMPARE_WITH_TIMEOUT(player.get(property).toString(), value, 3000);
+        };
+        // Defaults.
+        expect("keep-open", "true");
+        expect("hr-seek", "default");
+        expect("deinterlace", "false");
+        expect("sub-pos", "100");
+        expect("sub-font", "sans-serif");
+        expect("ytdl-format", "bestvideo+bestaudio/best");
+
+        settings.set("playback/atEnd", "clear");
+        settings.set("playback/exactSeek", true);
+        settings.set("video/deinterlace", true);
+        settings.set("video/streamQuality", "720");
+        settings.set("audio/stereo", true);
+        settings.set("audio/passthrough", true);
+        settings.set("subtitles/lift", 0.1);
+        settings.set("subtitles/background", true);
+        settings.set("subtitles/restyle", true);
+        settings.set("subtitles/font", "Noto Sans CJK KR");
+        expect("keep-open", "false");
+        expect("hr-seek", "true");
+        expect("deinterlace", "auto");
+        expect("ytdl-format", "bestvideo[height<=?720]+bestaudio/best[height<=?720]/best");
+        expect("audio-channels", "stereo");
+        expect("audio-spdif", "ac3,eac3,dts,dts-hd,truehd");
+        expect("sub-pos", "90");
+        expect("sub-border-style", "background-box");
+        expect("sub-ass-override", "force");
+        expect("sub-font", "Noto Sans CJK KR");
+
+        settings.set("audio/device", "pipewire/nowhere");
+        expect("audio-device", "pipewire/nowhere");
+        settings.set("audio/device", "auto");
+        expect("audio-device", "auto");
+    }
+
+    void oldSettingsCarryOver()
+    {
+        QTemporaryDir dir;
+        const QString file = dir.filePath("settings.ini");
+        {
+            QSettings old(file, QSettings::IniFormat);
+            old.setValue("playback/keepOpen", false);
+        }
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        Settings settings(&player, &actions, file);
+        QCOMPARE(settings.value("playback/atEnd").toString(), QString("clear"));
+        QVERIFY(!settings.store().contains("playback/keepOpen"));
+    }
+
+    void resetAllRestoresEverything()
+    {
+        QTemporaryDir dir;
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        Settings settings(&player, &actions, dir.filePath("settings.ini"));
+        settings.beginSession();
+        settings.set("video/smooth", true);
+        settings.set("subtitles/second", "en");
+        settings.bindKey("stop", "Ctrl+;");
+        settings.resetAll();
+        QCOMPARE(settings.value("video/smooth").toBool(), false);
+        QCOMPARE(settings.value("subtitles/second").toString(), QString());
+        QCOMPARE(settings.customBindings(), 0);
+        QVERIFY(settings.changedKeys().isEmpty());
+    }
+
+    void screenshotsGoToOmarchysFolder()
+    {
+        qputenv("OMARCHY_SCREENSHOT_DIR", "/tmp/omarchy-shots");
+        QCOMPARE(Settings::defaultScreenshotFolder(), QString("/tmp/omarchy-shots"));
+        qunsetenv("OMARCHY_SCREENSHOT_DIR");
+        QVERIFY(!Settings::defaultScreenshotFolder().isEmpty());
+    }
+
+    void repeatCyclesOffOneAll()
+    {
+        Player player(Player::Output::None);
+        QSignalSpy osd(&player, &Player::osd);
+        QCOMPARE(player.repeatMode(), QString("off"));
+        player.cycleRepeat();
+        QTRY_COMPARE(player.repeatMode(), QString("file"));
+        player.cycleRepeat();
+        QTRY_COMPARE(player.repeatMode(), QString("playlist"));
+        QCOMPARE(player.get("loop-file").toString(), QString("false"));
+        player.cycleRepeat();
+        QTRY_COMPARE(player.repeatMode(), QString("off"));
+        QTRY_VERIFY(osd.count() >= 3);
+        QCOMPARE(osd.last().first().toString(), QString("repeat"));
+    }
+
+    void abRepeatMarksAndClears()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"), 20);
+        Player player(Player::Output::None);
+        QVERIFY(loadPaused(player, clip));
+
+        // B before A loops from the start.
+        player.seekTo(4, true);
+        QTRY_VERIFY(qAbs(player.position() - 4) < 0.2);
+        player.setLoopPoint("b");
+        QTRY_VERIFY(qAbs(player.get("ab-loop-b").toDouble() - 4) < 0.2);
+        QCOMPARE(player.get("ab-loop-a").toDouble(), 0.0);
+
+        player.seekTo(2, true);
+        QTRY_VERIFY(qAbs(player.position() - 2) < 0.2);
+        player.setLoopPoint("a");
+        QTRY_VERIFY(qAbs(player.get("ab-loop-a").toDouble() - 2) < 0.2);
+        QVERIFY(qAbs(player.get("ab-loop-b").toDouble() - 4) < 0.2);
+
+        // A new start past the end drops the old end.
+        player.seekTo(8, true);
+        QTRY_VERIFY(qAbs(player.position() - 8) < 0.2);
+        player.setLoopPoint("a");
+        QTRY_VERIFY(qAbs(player.get("ab-loop-a").toDouble() - 8) < 0.2);
+        QCOMPARE(player.get("ab-loop-b").toString(), QString("no"));
+
+        player.setLoopPoint("clear");
+        QTRY_COMPARE(player.get("ab-loop-a").toString(), QString("no"));
+    }
+
+    void screenshotsSaveAndCopy()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("Holiday.mkv"));
+        Player player(Player::Output::None);
+        player.setScreenshotOptions(dir.filePath("shots"), false, "png");
+        QSignalSpy osd(&player, &Player::osd);
+        QVERIFY(loadPaused(player, clip));
+        QTRY_VERIFY(player.videoSize().width() > 0);
+        osd.clear();
+
+        player.screenshot();
+        QTRY_VERIFY_WITH_TIMEOUT(osd.count() > 0, 5000);
+        QCOMPARE(osd.last().first().toString(), QString("screenshot"));
+        QVERIFY(QFileInfo(player.lastScreenshot()).fileName().startsWith("Holiday 00.00.00"));
+        QCOMPARE(QImage(player.lastScreenshot()).size(), QSize(320, 240));
+
+        // A second one at the same moment doesn't overwrite the first.
+        const QString first = player.lastScreenshot();
+        osd.clear();
+        player.screenshot();
+        QTRY_VERIFY_WITH_TIMEOUT(osd.count() > 0, 5000);
+        QVERIFY(player.lastScreenshot() != first);
+        QVERIFY(QFileInfo::exists(first));
+
+        osd.clear();
+        player.screenshot(true);
+        QTRY_VERIFY_WITH_TIMEOUT(osd.count() > 0, 5000);
+        QCOMPARE(osd.last().first().toString(), QString("screenshot-copy"));
+        QCOMPARE(QGuiApplication::clipboard()->image().size(), QSize(320, 240));
+        QVERIFY(!QFileInfo::exists(player.lastScreenshot()));
+    }
+
+    void pictureResets()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"));
+        Player player(Player::Output::None);
+        QSignalSpy osd(&player, &Player::osd);
+        QVERIFY(loadPaused(player, clip));
+        player.command({"add", "brightness", "10"}, "brightness");
+        player.command({"cycle-values", "video-rotate", "90", "0"}, "rotate");
+        player.command({"cycle-values", "panscan", "1", "0"}, "fill");
+        player.command({"cycle-values", "video-aspect-override", "16:9", "no"}, "aspect");
+        QTRY_COMPARE(player.get("video-rotate").toInt(), 90);
+        QCOMPARE(player.get("brightness").toInt(), 10);
+        QCOMPARE(player.get("panscan").toDouble(), 1.0);
+        QTRY_VERIFY(qAbs(player.get("video-aspect-override").toDouble() - 16.0 / 9) < 0.01);
+
+        player.resetPicture();
+        QTRY_VERIFY_WITH_TIMEOUT(!osd.isEmpty() && osd.last().first().toString() == "picture-reset", 5000);
+        QCOMPARE(player.get("brightness").toInt(), 0);
+        QCOMPARE(player.get("video-rotate").toInt(), 0);
+        QCOMPARE(player.get("panscan").toDouble(), 0.0);
+        QVERIFY(player.get("video-aspect-override").toDouble() < 0); // "no" reads back as -2
+    }
+
+    void secondSubtitleShowsUpTop()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("Film.mkv"));
+        write(dir.filePath("Film.ko.srt"), "1\n00:00:00,000 --> 00:00:01,500\n안녕\n");
+        write(dir.filePath("Film.en.srt"), "1\n00:00:00,000 --> 00:00:01,500\nHello\n");
+        Player player(Player::Output::None);
+        player.set("slang", "ko,kor");
+        player.setSecondLanguage({"en", "eng"});
+        player.command({"set", "pause", "yes"});
+        player.openPaths({clip});
+        auto selected = [&](const char *property) {
+            const QVariant id = player.get(property);
+            for (const auto &track : player.tracks())
+                if (track.toMap().value("type") == "sub" && track.toMap().value("id") == id)
+                    return track.toMap().value("lang").toString();
+            return QString();
+        };
+        QTRY_COMPARE_WITH_TIMEOUT(selected("sid"), QString("ko"), 10000);
+        QTRY_COMPARE_WITH_TIMEOUT(selected("secondary-sid"), QString("en"), 5000);
+
+        player.setSecondLanguage({});
+        QTRY_COMPARE(player.get("secondary-sid").toString(), QString("false"));
+    }
+
+    void chaptersSayWhenThereAreNone()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"));
+        Player player(Player::Output::None);
+        QSignalSpy osd(&player, &Player::osd);
+        QVERIFY(loadPaused(player, clip));
+        osd.clear();
+        player.command({"add", "chapter", "1"}, "chapter");
+        QTRY_VERIFY_WITH_TIMEOUT(!osd.isEmpty(), 5000);
+        QCOMPARE(osd.last().first().toString(), QString("chapter-none"));
+    }
+
+    void audioSyncMoves()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"));
+        Player player(Player::Output::None);
+        Actions actions(&player);
+        QVERIFY(loadPaused(player, clip));
+        actions.trigger("audio-later");
+        actions.trigger("audio-later");
+        QTRY_VERIFY(qAbs(player.get("audio-delay").toDouble() - 0.2) < 0.001);
+        actions.trigger("audio-sync-reset");
+        QTRY_COMPARE(player.get("audio-delay").toDouble(), 0.0);
+        actions.trigger("sub-up");
+        QTRY_COMPARE(player.get("sub-pos").toInt(), 99);
+        actions.trigger("sub-bigger");
+        QTRY_VERIFY(qAbs(player.get("sub-scale").toDouble() - 1.1) < 0.001);
+    }
+
+    void theLastFileEndingIsReported()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"));
+        Player player(Player::Output::None);
+        player.set("keep-open", false);
+        QSignalSpy finished(&player, &Player::finished);
+        player.openPaths({clip});
+        QTRY_VERIFY_WITH_TIMEOUT(finished.count() == 1, 15000);
+        QVERIFY(player.idle());
+
+        // Stopping isn't finishing.
+        player.openPaths({clip});
+        QTRY_VERIFY_WITH_TIMEOUT(!player.idle(), 10000);
+        player.stop();
+        QTRY_VERIFY(player.idle());
+        QTest::qWait(300);
+        QCOMPARE(finished.count(), 1);
+    }
+
 private:
+    // Opens a clip paused and waits until it has fully loaded.
+    static bool loadPaused(Player &player, const QString &clip)
+    {
+        QSignalSpy loaded(&player, &Player::fileLoaded);
+        player.command({"set", "pause", "yes"});
+        player.openPaths({clip});
+        return QTest::qWaitFor([&] { return loaded.count() > 0; }, 10000);
+    }
+
     static QByteArray encode(const QString &text, const QString &codepage)
     {
         iconv_t converter = iconv_open(codepage.toLatin1().constData(), "UTF-8");
@@ -479,7 +803,7 @@ private:
     }
 
     // A two-second test pattern with a tone, made with ffmpeg.
-    static QString makeClip(const QString &path)
+    static QString makeClip(const QString &path, int seconds = 2)
     {
         if (QStandardPaths::findExecutable("ffmpeg").isEmpty())
             QTest::qSkip("ffmpeg isn't installed", __FILE__, __LINE__);
@@ -487,7 +811,7 @@ private:
         ffmpeg.start("ffmpeg", {"-hide_banner", "-loglevel", "error", "-y",
                                 "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=25",
                                 "-f", "lavfi", "-i", "sine=frequency=440",
-                                "-t", "2", "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", path});
+                                "-t", QString::number(seconds), "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", path});
         ffmpeg.waitForFinished(30000);
         return path;
     }

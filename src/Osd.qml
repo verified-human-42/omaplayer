@@ -45,7 +45,7 @@ Item {
         id: card
         width: content.width + 2 * (osd.pad + border.width)
         height: 24 + 2 * (osd.pad + border.width)
-        fill: 0.72
+        fill: 0.5
         opacity: 0
         visible: opacity > 0
 

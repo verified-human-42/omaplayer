@@ -41,6 +41,7 @@ ApplicationWindow {
     readonly property bool menuOpen: menuLoader.item !== null && menuLoader.item.visible
     readonly property bool sheetOpen: sheetLoader.item !== null && sheetLoader.item.visible
     readonly property bool settingsOpen: settingsLoader.item !== null && settingsLoader.item.visible
+    readonly property bool goToOpen: goToLoader.item !== null && goToLoader.item.visible
 
     function openMenu(source) {
         menuLoader.active = true;
@@ -97,6 +98,12 @@ ApplicationWindow {
         case "shortcuts":
             toggleSheet();
             break;
+        case "go-to-time":
+            if (!player.idle && player.seekable) {
+                goToLoader.active = true;
+                goToLoader.item.open();
+            }
+            break;
         }
     }
 
@@ -125,7 +132,17 @@ ApplicationWindow {
     }
 
     // What each action reports in the corner, read after mpv has applied it.
+    function percent(value) {
+        return (value > 0 ? "+" : "") + Math.round(value) + "%";
+    }
+
+    function moment(value) {
+        return typeof value === "number" ? Format.time(value) : "…";
+    }
+
     function showOsd(kind) {
+        if (!settings.values["interface/osd"])
+            return;
         osd.kind = kind;
         switch (kind) {
         case "pause":
@@ -175,7 +192,72 @@ ApplicationWindow {
             osd.show({ icon: "shuffle", label: qsTr("Playlist"), value: qsTr("Shuffled") });
             break;
         case "repeat":
-            osd.show({ icon: "repeat", label: qsTr("Repeat"), value: player.repeat ? qsTr("On") : qsTr("Off") });
+            osd.show({ icon: "repeat", label: qsTr("Repeat"),
+                       value: player.repeatMode === "file" ? qsTr("This file") : player.repeatMode === "playlist" ? qsTr("Playlist") : qsTr("Off") });
+            break;
+        case "ab-loop":
+            var a = player.get("ab-loop-a"), b = player.get("ab-loop-b");
+            osd.show({ icon: "repeat", label: qsTr("A-B repeat"),
+                       value: typeof a !== "number" && typeof b !== "number" ? qsTr("Off") : moment(a) + " – " + moment(b) });
+            break;
+        case "chapter":
+            var chapters = player.get("chapter-list") || [], at = player.get("chapter");
+            var title = at >= 0 && at < chapters.length ? chapters[at].title : "";
+            osd.show({ label: qsTr("Chapter"), value: (at + 1) + " / " + chapters.length + (title ? "  ·  " + title : "") });
+            break;
+        case "chapter-none":
+            osd.show({ label: qsTr("Chapter"), value: qsTr("No more chapters") });
+            break;
+        case "audio-delay":
+            osd.show({ icon: "volume", label: qsTr("Audio sync"), value: qsTr("%1 s").arg(signed(player.get("audio-delay"), 1)) });
+            break;
+        case "second-subtitle":
+            var second = player.get("secondary-sid"), name = qsTr("Off");
+            player.tracks.forEach(function (track) {
+                if (track.type === "sub" && track.id === second)
+                    name = [track.title, track.lang].filter(function (part) { return part; }).join(" · ") || qsTr("Track %1").arg(track.id);
+            });
+            osd.show({ icon: "subtitles", label: qsTr("Second subtitle"), value: name });
+            break;
+        case "sub-pos":
+            osd.show({ icon: "subtitles", label: qsTr("Subtitle height"), value: Math.round(100 - player.get("sub-pos")) + "%" });
+            break;
+        case "sub-scale":
+            osd.show({ icon: "subtitles", label: qsTr("Subtitle size"), value: Math.round(player.get("sub-scale") * 100) + "%" });
+            break;
+        case "screenshot":
+            var shot = player.lastScreenshot();
+            osd.show({ icon: "video", label: qsTr("Saved"), value: shot.substring(shot.lastIndexOf("/") + 1), duration: 2500 });
+            break;
+        case "screenshot-copy":
+            osd.show({ icon: "video", label: qsTr("Frame"), value: qsTr("Copied") });
+            break;
+        case "screenshot-failed":
+            osd.show({ icon: "video", label: qsTr("Screenshot"), value: qsTr("Couldn't save it") });
+            break;
+        case "aspect":
+            var aspect = player.get("video-aspect-override");
+            osd.show({ icon: "video", label: qsTr("Aspect ratio"),
+                       value: aspect === "no" || aspect === undefined || aspect < 0 ? qsTr("Original")
+                            : ({ "1.778": "16:9", "1.333": "4:3", "2.350": "2.35:1" })[Number(aspect).toFixed(3)] || Number(aspect).toFixed(2) });
+            break;
+        case "fill":
+            osd.show({ icon: "fullscreen", label: qsTr("Fill the screen"), value: player.get("panscan") > 0 ? qsTr("On") : qsTr("Off") });
+            break;
+        case "rotate":
+            osd.show({ icon: "video", label: qsTr("Rotation"), value: player.get("video-rotate") + "°" });
+            break;
+        case "brightness":
+            osd.show({ icon: "video", label: qsTr("Brightness"), value: percent(player.get("brightness")) });
+            break;
+        case "contrast":
+            osd.show({ icon: "video", label: qsTr("Contrast"), value: percent(player.get("contrast")) });
+            break;
+        case "saturation":
+            osd.show({ icon: "video", label: qsTr("Color"), value: percent(player.get("saturation")) });
+            break;
+        case "picture-reset":
+            osd.show({ icon: "video", label: qsTr("Picture"), value: qsTr("Reset") });
             break;
         // A file starting: its place in the playlist and its name, and where
         // it picks up when it resumes.
@@ -207,6 +289,16 @@ ApplicationWindow {
     Connections {
         target: player
         function onOsd(kind) { win.showOsd(kind); }
+        // Opening something from the start screen goes fullscreen, if asked.
+        function onIdleChanged() {
+            if (!player.idle && settings.values["interface/startFullscreen"] && !win.fullscreen)
+                win.toggleFullscreen();
+        }
+        // The last file is over: hold it, show the start screen, or close.
+        function onFinished() {
+            if (settings.values["playback/atEnd"] === "quit")
+                win.close();
+        }
     }
 
     // One Shortcut per action, rebuilt when the keymap changes.
@@ -216,7 +308,7 @@ ApplicationWindow {
             required property var modelData
             sequences: modelData.keys
             context: Qt.ApplicationShortcut
-            enabled: !win.menuOpen && !win.settingsOpen
+            enabled: !win.menuOpen && !win.settingsOpen && !win.goToOpen
                      && (!win.sheetOpen || modelData.id === "shortcuts" || modelData.id === "quit")
             onActivated: actions.trigger(modelData.id)
         }
@@ -485,6 +577,12 @@ ApplicationWindow {
         id: sheetLoader
         active: false
         sourceComponent: ShortcutSheet {}
+    }
+
+    Loader {
+        id: goToLoader
+        active: false
+        sourceComponent: GoToTime {}
     }
 
     Loader {

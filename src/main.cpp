@@ -2,14 +2,20 @@
 
 #include <QDateTime>
 #include <QGuiApplication>
+#include <QDir>
 #include <QIcon>
+#include <QLocalServer>
+#include <QLocalSocket>
+#include <QProcess>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QSettings>
 #include <QTimer>
 #include <QUrl>
 #include <clocale>
+#include <unistd.h>
 
 #include "actions.h"
 #include "player.h"
@@ -46,6 +52,28 @@ int main(int argc, char *argv[]) {
 
     QQuickStyle::setStyle("Material");
 
+    // Files and URLs from the command line, or from the launcher's %U.
+    QStringList items = app.arguments().mid(1);
+    items.removeIf([](const QString &item) { return item.startsWith('-') && item != "-"; });
+
+    // Files opened while a window is up play in that window, the way Windows
+    // players behave, unless Settings › Playback says otherwise. Asking takes
+    // a moment only when one is running; otherwise this one takes the calls.
+    const QString server = QString("omaplayer-%1").arg(getuid());
+    QLocalSocket running;
+    running.connectToServer(server);
+    const bool another = running.waitForConnected(250);
+    if (another && !items.isEmpty() && QSettings().value("playback/oneWindow", true).toBool()) {
+        QStringList absolute;
+        for (const auto &item : items)
+            absolute.append(item.contains("://") || item == "-" ? item : QDir::current().absoluteFilePath(item));
+        running.write(absolute.join('\n').toUtf8());
+        running.waitForBytesWritten(1000);
+        running.disconnectFromServer();
+        return 0;
+    }
+    running.abort();
+
     // Installed before anything is translated, and every qsTr() binding is
     // re-evaluated when the Omarchy language changes.
     Translator translator;
@@ -71,8 +99,10 @@ int main(int argc, char *argv[]) {
     settings.applyAll();
     QObject::connect(&translator, &Translator::changed, &settings,
                      [&] { settings.setSystemLanguage(translator.language()); });
-    player.set("volume", settings.store().value("state/volume", 100).toDouble());
-    player.set("mute", settings.store().value("state/mute", false).toBool());
+    if (settings.value("audio/rememberVolume").toBool()) {
+        player.set("volume", settings.store().value("state/volume", 100).toDouble());
+        player.set("mute", settings.store().value("state/mute", false).toBool());
+    }
     QObject::connect(&app, &QCoreApplication::aboutToQuit, [&] {
         settings.store().setValue("state/volume", player.volume());
         settings.store().setValue("state/mute", player.muted());
@@ -120,10 +150,55 @@ int main(int argc, char *argv[]) {
         });
     }
 
-    // Files and URLs from the command line, or from the launcher's %U.
-    QStringList items = app.arguments().mid(1);
-    items.removeIf([](const QString &item) { return item.startsWith('-') && item != "-"; });
     player.openPaths(items);
+
+    // While a video plays, the window wears Omarchy's "noidle" tag, which its
+    // Hyprland rules turn into an idle inhibitor: the screen stays on. (libmpv
+    // leaves keeping the screen awake to whoever owns the window.)
+    bool awake = false;
+    auto keepAwake = [&] {
+        const bool wanted = settings.value("video/keepAwake").toBool() && !player.idle() && !player.paused()
+                            && player.videoSize().width() > 0;
+        if (wanted == awake || qEnvironmentVariableIsEmpty("HYPRLAND_INSTANCE_SIGNATURE"))
+            return;
+        awake = wanted;
+        const QString tag = QString(wanted ? "+" : "-") + "noidle";
+        const QString self = QString("pid:%1").arg(QCoreApplication::applicationPid());
+        auto *hyprctl = new QProcess(&app);
+        QObject::connect(hyprctl, &QProcess::finished, hyprctl, [hyprctl, tag, self] {
+            // Hyprland set up in Lua takes the call above; older setups the
+            // classic dispatcher.
+            if (QString::fromUtf8(hyprctl->readAll()).contains("error", Qt::CaseInsensitive))
+                QProcess::startDetached("hyprctl", {"dispatch", "tagwindow", tag, self});
+            hyprctl->deleteLater();
+        });
+        hyprctl->start("hyprctl", {"dispatch", QString("hl.dsp.window.tag({ tag = \"%1\", window = \"%2\" })").arg(tag, self)});
+    };
+    QObject::connect(&player, &Player::pausedChanged, &app, keepAwake);
+    QObject::connect(&player, &Player::idleChanged, &app, keepAwake);
+    QObject::connect(&player, &Player::videoSizeChanged, &app, keepAwake);
+    QObject::connect(&settings, &Settings::changed, &app, keepAwake);
+
+    // The first window listens for the files later launches hand over.
+    QLocalServer handover;
+    if (!another) {
+        QLocalServer::removeServer(server);
+        handover.listen(server);
+        QObject::connect(&handover, &QLocalServer::newConnection, &handover, [&handover, &player, window] {
+            while (QLocalSocket *socket = handover.nextPendingConnection()) {
+                QObject::connect(socket, &QLocalSocket::disconnected, socket, [socket, &player, window] {
+                    QVariantList opened;
+                    for (const auto &line : QString::fromUtf8(socket->readAll()).split('\n', Qt::SkipEmptyParts))
+                        opened.append(line);
+                    if (!opened.isEmpty()) {
+                        player.open(opened);
+                        window->requestActivate();
+                    }
+                    socket->deleteLater();
+                });
+            }
+        });
+    }
 
     return app.exec();
 }

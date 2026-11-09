@@ -79,7 +79,7 @@ Rectangle {
 
                         required property var modelData
                         readonly property var entries: actions.list.filter(function (entry) {
-                            return entry.group === group.modelData.id && entry.keyLabels.length > 0;
+                            return entry.group === group.modelData.id && entry.keyLabels.length > 0 && entry.everyday;
                         })
 
                         visible: entries.length > 0

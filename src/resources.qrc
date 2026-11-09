@@ -11,11 +11,13 @@
         <file alias="MasterMenu.qml">MasterMenu.qml</file>
         <file alias="MenuEntry.qml">MenuEntry.qml</file>
         <file alias="Card.qml">Card.qml</file>
+        <file alias="GoToTime.qml">GoToTime.qml</file>
         <file alias="Osd.qml">Osd.qml</file>
         <file alias="PlaybackInfo.qml">PlaybackInfo.qml</file>
         <file alias="PlaylistPanel.qml">PlaylistPanel.qml</file>
         <file alias="SeekBar.qml">SeekBar.qml</file>
         <file alias="SettingField.qml">SettingField.qml</file>
+        <file alias="SettingMenu.qml">SettingMenu.qml</file>
         <file alias="SettingRow.qml">SettingRow.qml</file>
         <file alias="SettingsPage.qml">SettingsPage.qml</file>
         <file alias="ShortcutSheet.qml">ShortcutSheet.qml</file>

@@ -19,7 +19,7 @@ Item {
     readonly property bool changed: binding ? entry.custom === true
                                   : radio ? false
                                   : key !== "" && settings.changedKeys.indexOf(key) >= 0
-    readonly property bool interactive: ["switch", "choice", "level", "text", "binding", "action", "radio"].indexOf(entry.type) >= 0
+    readonly property bool interactive: ["switch", "choice", "menu", "level", "text", "binding", "action", "radio"].indexOf(entry.type) >= 0
     readonly property color ink: theme.foreground
 
     signal pointed()
@@ -38,7 +38,7 @@ Item {
 
     // Arrow keys and h/l nudge the value; Space and Enter flip or advance it.
     function step(delta) {
-        if (entry.type === "choice") {
+        if (entry.type === "choice" || entry.type === "menu") {
             var options = entry.options, at = 0;
             for (var i = 0; i < options.length; ++i)
                 if (String(options[i].value) === String(value))
@@ -63,14 +63,21 @@ Item {
                     settings.set(key, options[(i + 1) % options.length].value);
                     return;
                 }
+        } else if (entry.type === "menu" && control.item) {
+            control.item.open();
         } else if (entry.type === "text" && control.item) {
             control.item.forceActiveFocus();
         } else if (binding) {
             captureRequested();
         } else if (radio) {
             settings.set(entry.setting, entry.value);
-        } else if (entry.type === "action" && entry.command === "resetAllKeys") {
-            settings.resetAllKeys();
+        } else if (entry.type === "action" && control.item && control.item.usable) {
+            if (entry.command === "resetAllKeys")
+                settings.resetAllKeys();
+            else if (entry.command === "resetAll")
+                settings.resetAll();
+            else if (entry.command === "makeDefaultPlayer")
+                settings.makeDefaultPlayer();
         }
     }
 
@@ -169,6 +176,7 @@ Item {
             switch (row.entry.type) {
             case "switch": return switchControl;
             case "choice": return choiceControl;
+            case "menu": return menuControl;
             case "level": return levelControl;
             case "text": return textControl;
             case "keys": return keysControl;
@@ -191,6 +199,15 @@ Item {
     Component {
         id: choiceControl
         ChoiceGroup {
+            options: row.entry.options
+            value: String(row.value)
+            onPicked: (next) => settings.set(row.key, next)
+        }
+    }
+
+    Component {
+        id: menuControl
+        SettingMenu {
             options: row.entry.options
             value: String(row.value)
             onPicked: (next) => settings.set(row.key, next)
@@ -319,7 +336,9 @@ Item {
     Component {
         id: actionControl
         Rectangle {
-            readonly property bool usable: row.entry.command !== "resetAllKeys" || settings.customBindings > 0
+            readonly property bool usable: row.entry.command === "resetAllKeys" ? settings.customBindings > 0
+                                         : row.entry.command === "makeDefaultPlayer" ? !settings.defaultPlayer
+                                         : true
             implicitWidth: actionText.implicitWidth + 24
             implicitHeight: 24
             radius: theme.radius > 0 ? height / 2 : 0
@@ -341,7 +360,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
             }
             TapHandler {
-                onTapped: if (parent.usable) row.activate()
+                onTapped: row.activate()
             }
         }
     }

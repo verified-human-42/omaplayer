@@ -30,6 +30,8 @@ class Player : public QObject {
     Q_PROPERTY(int playlistCount READ playlistCount NOTIFY playlistChanged)
     Q_PROPERTY(QVariantList playlist READ playlist NOTIFY playlistChanged)
     Q_PROPERTY(bool repeat READ repeat NOTIFY repeatChanged)
+    // "off", "file" (this one over and over), or "playlist".
+    Q_PROPERTY(QString repeatMode READ repeatMode NOTIFY repeatChanged)
     Q_PROPERTY(QSize videoSize READ videoSize NOTIFY videoSizeChanged)
     Q_PROPERTY(QVariantList tracks READ tracks NOTIFY tracksChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
@@ -59,7 +61,8 @@ public:
     int playlistPosition() const { return m_playlistPosition; }
     int playlistCount() const { return m_playlistCount; }
     QVariantList playlist() const { return m_playlist; }
-    bool repeat() const { return m_repeat; }
+    bool repeat() const { return m_loopFile || m_loopPlaylist; }
+    QString repeatMode() const { return m_loopFile ? "file" : m_loopPlaylist ? "playlist" : "off"; }
     QSize videoSize() const { return m_videoSize; }
     QVariantList tracks() const { return m_tracks; }
     QString error() const { return m_error; }
@@ -82,6 +85,17 @@ public:
     Q_INVOKABLE void playIndex(int index);
     Q_INVOKABLE void removeIndex(int index);
     Q_INVOKABLE void togglePause();
+    // Off, then this file over and over, then the whole playlist.
+    Q_INVOKABLE void cycleRepeat();
+    // A-B repeat: "a" and "b" mark the ends at the current moment, "clear"
+    // ends the loop. Marking B first loops from the start.
+    Q_INVOKABLE void setLoopPoint(const QString &which);
+    // Saves the current frame to the screenshot folder, or copies it.
+    Q_INVOKABLE void screenshot(bool toClipboard = false);
+    Q_INVOKABLE QString lastScreenshot() const { return m_lastScreenshot; }
+    // Brightness, contrast, saturation, aspect, fill, zoom, and rotation back
+    // to how the file looks.
+    Q_INVOKABLE void resetPicture();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void seekTo(double seconds, bool exact);
     // Fractions of the window the video keeps clear of, for docked controls.
@@ -100,6 +114,12 @@ public:
     void setSubtitleMode(const QString &mode) { m_subtitleMode = mode; }
     void setSubtitleEncoding(const QString &encoding) { m_subtitleEncoding = encoding; }
     void setLanguage(const QString &language) { m_language = language; }
+    // A second subtitle in these language codes shows at the top, for
+    // watching in two languages at once. Empty turns it off.
+    void setSecondLanguage(const QStringList &codes);
+    // folder: where screenshots go; subtitles: whether they're in the picture;
+    // format: png, jpg, or webp.
+    void setScreenshotOptions(const QString &folder, bool subtitles, const QString &format);
     // Adds subtitle files to what's playing; the first is shown.
     Q_INVOKABLE void addSubtitles(const QStringList &paths, bool select = true);
     QStringList folderOf(const QString &path) const;
@@ -123,6 +143,8 @@ signals:
     void tracksChanged();
     void errorChanged();
     void fileLoaded();
+    // The last file played to its end and nothing more is queued.
+    void finished();
     void osd(const QString &kind);
 
 private:
@@ -136,6 +158,7 @@ private:
     void setOpening(bool opening);
     void loadStreamSupport();
     void loadSubtitles();
+    void chooseSecondSubtitle();
     static QStringList normalize(const QVariantList &items);
 
     mpv_handle *m_mpv = nullptr;
@@ -166,7 +189,15 @@ private:
     int m_playlistPosition = -1;
     int m_playlistCount = 0;
     QVariantList m_playlist;
-    bool m_repeat = false;
+    bool m_loopFile = false;
+    bool m_loopPlaylist = false;
+    bool m_endedAtEof = false;
+    QStringList m_secondLanguage;
+    bool m_secondChosen = false;
+    QString m_screenshotFolder;
+    bool m_screenshotSubtitles = true;
+    QString m_screenshotFormat = "png";
+    QString m_lastScreenshot;
     QSize m_videoSize;
     QVariantList m_tracks;
     QString m_error;

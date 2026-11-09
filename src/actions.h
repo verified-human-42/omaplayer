@@ -30,6 +30,9 @@ public:
         Kind kind;
         QStringList command;
         QString osd;
+        // Listed on the start screen's cheat sheet; the rest are in the menu
+        // and the full shortcut sheet.
+        bool everyday = true;
     };
 
     explicit Actions(Player *player, QObject *parent = nullptr);
@@ -42,6 +45,8 @@ public:
     QVariantList groups() const;
     QString keymap() const { return m_keymap; }
     void setKeymap(const QString &keymap);
+    // Seconds the arrow keys seek, alone and with Ctrl.
+    void setSeekSteps(int step, int longStep);
 
     // Keys the user chose for an action, replacing the layout's.
     void setOverrides(const QHash<QString, QStringList> &overrides);
@@ -63,4 +68,9 @@ private:
     Player *m_player;
     QString m_keymap = "omaplayer";
     QHash<QString, QStringList> m_overrides;
+    int m_seekStep = 5;
+    int m_seekLongStep = 30;
+
+    QString textFor(const Spec &spec) const;
+    QStringList commandFor(const Spec &spec) const;
 };

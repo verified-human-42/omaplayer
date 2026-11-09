@@ -1,7 +1,11 @@
 #include "settings.h"
 
+#include <QDir>
+#include <QFile>
 #include <QKeySequence>
 #include <QLocale>
+#include <QProcess>
+#include <QStandardPaths>
 
 #include "actions.h"
 #include "player.h"
@@ -11,9 +15,15 @@ Settings::Settings(Player *player, Actions *actions, const QString &file, QObjec
       m_store(file.isEmpty() ? std::make_unique<QSettings>() : std::make_unique<QSettings>(file, QSettings::IniFormat)),
       m_player(player),
       m_actions(actions) {
+    // 0.1 had a "hold the last frame" switch where "when the last file ends" is now.
+    if (m_store->contains("playback/keepOpen") && !m_store->contains("playback/atEnd"))
+        m_store->setValue("playback/atEnd", m_store->value("playback/keepOpen").toString() == "false" ? "clear" : "hold");
+    m_store->remove("playback/keepOpen");
+
     for (const auto &spec : specs())
         m_values.insert(spec.key, normalize(spec, m_store->value(spec.key, spec.fallback)));
     m_session = m_values;
+
 
     // One line per key, so any key, ";" and "," included, round-trips.
     m_store->beginGroup("keys");
@@ -27,7 +37,11 @@ const QList<Settings::Spec> &Settings::specs() {
     static const QList<Spec> table = {
         {"playback/resume", true},
         {"playback/folderPlaylist", true},
-        {"playback/keepOpen", true},
+        {"playback/atEnd", "hold", {"hold", "clear", "quit"}},
+        {"playback/seekStep", "5", {"1", "3", "5", "10"}},
+        {"playback/seekLongStep", "30", {"10", "30", "60"}},
+        {"playback/exactSeek", false},
+        {"playback/oneWindow", true},
         {"playback/clickPause", true},
         {"playback/wheel", "volume", {"volume", "seek"}},
 
@@ -35,21 +49,38 @@ const QList<Settings::Spec> &Settings::specs() {
         {"video/smooth", false},
         {"video/scale", "balanced", {"fast", "balanced", "sharp"}},
         {"video/deband", false},
+        {"video/deinterlace", false},
+        {"video/keepAwake", true},
+        {"video/streamQuality", "best", {"best", "2160", "1440", "1080", "720", "480"}},
+        {"video/screenshotFolder", ""},
+        {"video/screenshotFormat", "png", {"png", "jpg", "webp"}},
+        {"video/screenshotSubtitles", true},
 
         {"audio/boost", false},
         {"audio/normalize", false},
         {"audio/language", ""},
+        {"audio/device", "auto"},
+        {"audio/stereo", false},
+        {"audio/passthrough", false},
+        {"audio/rememberVolume", true},
 
         {"subtitles/auto", "fuzzy", {"fuzzy", "exact", "no"}},
         {"subtitles/language", ""},
         {"subtitles/encoding", "auto", {"auto", "utf-8", "japanese", "chinese-simplified", "chinese-traditional", "korean"}},
         {"subtitles/scale", 1.0, {}, 0.5, 2.0},
+        {"subtitles/lift", 0.0, {}, 0.0, 0.3},
+        {"subtitles/background", false},
+        {"subtitles/restyle", false},
+        {"subtitles/second", ""},
+        {"subtitles/font", ""},
 
         {"interface/keymap", "omaplayer", {"omaplayer", "mpv"}},
         {"interface/language", "omarchy", {"omarchy", "en", "ko", "ja", "zh-CN", "zh-TW"}},
         {"interface/controls", "docked", {"docked", "floating"}},
         {"interface/remaining", false},
         {"interface/hideDelay", 2, {}, 1, 10},
+        {"interface/osd", true},
+        {"interface/startFullscreen", false},
     };
     return table;
 }
@@ -135,8 +166,13 @@ void Settings::apply(const QString &key) {
         m_player->set("resume-playback", value.toBool());
     else if (key == "playback/folderPlaylist")
         m_player->setFolderPlaylist(value.toBool());
-    else if (key == "playback/keepOpen")
-        m_player->set("keep-open", value.toBool());
+    else if (key == "playback/atEnd")
+        // Quitting at the end is the window's to do, on Player::finished.
+        m_player->set("keep-open", value.toString() == "hold");
+    else if (key == "playback/seekStep" || key == "playback/seekLongStep")
+        m_actions->setSeekSteps(m_values.value("playback/seekStep").toInt(), m_values.value("playback/seekLongStep").toInt());
+    else if (key == "playback/exactSeek")
+        m_player->set("hr-seek", value.toBool() ? "yes" : "default");
     else if (key == "video/hwdec")
         m_player->set("hwdec", value.toBool() ? "auto-safe" : "no");
     else if (key == "video/smooth") {
@@ -149,12 +185,34 @@ void Settings::apply(const QString &key) {
         m_player->set("scale", scale == "fast" ? "bilinear" : scale == "sharp" ? "ewa_lanczossharp" : "spline36");
     } else if (key == "video/deband")
         m_player->set("deband", value.toBool());
+    else if (key == "video/deinterlace")
+        m_player->set("deinterlace", value.toBool() ? "auto" : "no");
+    else if (key == "video/streamQuality") {
+        // The tallest picture yt-dlp fetches; the best there is when none.
+        const QString height = value.toString();
+        m_player->set("ytdl-format", height == "best" ? QString("bestvideo+bestaudio/best")
+                                   : QString("bestvideo[height<=?%1]+bestaudio/best[height<=?%1]/best").arg(height));
+    }
+    else if (key.startsWith("video/screenshot")) {
+        const QString folder = m_values.value("video/screenshotFolder").toString();
+        m_player->setScreenshotOptions(folder.isEmpty() ? defaultScreenshotFolder() : folder,
+                                       m_values.value("video/screenshotSubtitles").toBool(),
+                                       m_values.value("video/screenshotFormat").toString());
+    }
     else if (key == "audio/boost")
         m_player->set("volume-max", value.toBool() ? 150 : 100);
     else if (key == "audio/normalize")
         m_player->set("af", value.toBool() ? "lavfi=[dynaudnorm=f=250:g=15:p=0.9]" : "");
     else if (key == "audio/language")
         m_player->set("alang", value.toString());
+    else if (key == "audio/device")
+        m_player->set("audio-device", value.toString().isEmpty() ? QString("auto") : value.toString());
+    else if (key == "audio/stereo")
+        m_player->set("audio-channels", value.toBool() ? "stereo" : "auto-safe");
+    else if (key == "audio/passthrough")
+        // Sends surround tracks untouched to a receiver over HDMI or S/PDIF.
+        m_player->set("audio-spdif", value.toBool() ? "ac3,eac3,dts,dts-hd,truehd" : "");
+
     else if (key == "subtitles/auto")
         m_player->setSubtitleMode(value.toString());
     else if (key == "subtitles/language") {
@@ -173,6 +231,21 @@ void Settings::apply(const QString &key) {
     }
     else if (key == "subtitles/scale")
         m_player->set("sub-scale", value.toDouble());
+    else if (key == "subtitles/lift")
+        m_player->set("sub-pos", qRound(100 - value.toDouble() * 100));
+    else if (key == "subtitles/font")
+        m_player->set("sub-font", value.toString().isEmpty() ? QString("sans-serif") : value.toString());
+    else if (key == "subtitles/background")
+        m_player->set("sub-border-style", value.toBool() ? "background-box" : "outline-and-shadow");
+    else if (key == "subtitles/restyle")
+        // Styled (ASS) subtitles bring their own look; this puts ours on them.
+        m_player->set("sub-ass-override", value.toBool() ? "force" : "scale");
+    else if (key == "subtitles/second") {
+        QStringList codes;
+        for (const auto &code : value.toString().split(',', Qt::SkipEmptyParts))
+            codes += languageCodes(code.trimmed()).toLower().split(',');
+        m_player->setSecondLanguage(codes);
+    }
     else if (key == "interface/keymap")
         m_actions->setKeymap(value.toString());
 }
@@ -278,4 +351,55 @@ void Settings::storeBindings() {
     m_store->endGroup();
     m_actions->setOverrides(m_bindings);
     emit changed();
+}
+
+// Where Omarchy's own screenshots go.
+QString Settings::defaultScreenshotFolder() {
+    const QString omarchy = qEnvironmentVariable("OMARCHY_SCREENSHOT_DIR");
+    if (!omarchy.isEmpty())
+        return omarchy;
+    const QString pictures = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
+    return pictures.isEmpty() ? QDir::home().filePath("Pictures") : pictures;
+}
+
+void Settings::resetAll() {
+    for (const auto &spec : specs())
+        set(spec.key, spec.fallback);
+    resetAllKeys();
+}
+
+// The MIME types Omaplayer's launcher entry says it plays.
+QStringList Settings::mediaTypes() {
+    QFile desktop(QStandardPaths::locate(QStandardPaths::ApplicationsLocation, "omaplayer.desktop"));
+    if (!desktop.open(QIODevice::ReadOnly))
+        return {};
+    for (const auto &line : QString::fromUtf8(desktop.readAll()).split('\n'))
+        if (line.startsWith("MimeType="))
+            return line.mid(9).split(';', Qt::SkipEmptyParts);
+    return {};
+}
+
+void Settings::checkDefaultPlayer() {
+    auto *query = new QProcess(this);
+    connect(query, &QProcess::finished, this, [this, query] {
+        const bool isDefault = QString::fromUtf8(query->readAllStandardOutput()).trimmed() == "omaplayer.desktop";
+        query->deleteLater();
+        if (isDefault != m_defaultPlayer) {
+            m_defaultPlayer = isDefault;
+            emit defaultPlayerChanged();
+        }
+    });
+    query->start("xdg-mime", {"query", "default", "video/mp4"});
+}
+
+void Settings::makeDefaultPlayer() {
+    const QStringList types = mediaTypes();
+    if (types.isEmpty())
+        return;
+    auto *assign = new QProcess(this);
+    connect(assign, &QProcess::finished, this, [this, assign] {
+        assign->deleteLater();
+        checkDefaultPlayer();
+    });
+    assign->start("xdg-mime", QStringList{"default", "omaplayer.desktop"} + types);
 }
