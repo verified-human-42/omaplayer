@@ -254,8 +254,7 @@ void Player::handleEvent(const mpv_event &event) {
         loadSubtitles();
         refresh("position");
         emit fileLoaded();
-        if (m_position > 1)
-            emit osd("resume");
+        emit osd(m_position > 1 ? "resume" : "file");
         break;
     case MPV_EVENT_END_FILE: {
         const auto *end = static_cast<mpv_event_end_file *>(event.data);

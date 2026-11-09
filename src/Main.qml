@@ -112,6 +112,14 @@ ApplicationWindow {
         return qsTr("Off");
     }
 
+    // The file's name, as on disk; a stream's own title.
+    function mediaName() {
+        var path = player.path;
+        if (path.indexOf("://") >= 0 && !path.startsWith("file://"))
+            return player.title || path;
+        return decodeURIComponent(path.substring(path.lastIndexOf("/") + 1));
+    }
+
     function signed(value, digits) {
         return (value > 0 ? "+" : "") + Number(value).toLocaleString(Qt.locale(), 'f', digits);
     }
@@ -163,8 +171,14 @@ ApplicationWindow {
         case "repeat":
             osd.show(qsTr("Repeat"), player.repeat ? qsTr("On") : qsTr("Off"));
             break;
+        // A file starting: its place in the playlist and its name, and where
+        // it picks up when it resumes.
+        case "file":
         case "resume":
-            osd.show(qsTr("Resumed"), Format.time(player.position));
+            var where = player.playlistCount > 1 ? (player.playlistPosition + 1) + " / " + player.playlistCount : "";
+            if (kind === "resume")
+                where += (where === "" ? "" : "  ·  ") + qsTr("Resumed %1").arg(Format.time(player.position));
+            osd.show(where, mediaName(), -1, 3000);
             break;
         case "clipboard-empty":
             osd.show(qsTr("Clipboard"), qsTr("Nothing to open"));
@@ -370,6 +384,7 @@ ApplicationWindow {
         Osd {
             id: osd
             x: 18
+            maxWidth: parent.width - 36
             y: win.fullscreen && topStrip.opacity > 0 ? 50 : 18
         }
 

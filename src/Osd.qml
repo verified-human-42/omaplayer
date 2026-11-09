@@ -9,14 +9,17 @@ Item {
     property string label
     property string value
     property real meter: -1
+    // Long values (file names) elide to fit the window.
+    property real maxWidth: 100000
     readonly property color ink: theme.stageForeground
     readonly property color base: theme.stage
 
-    function show(label, value, meter) {
+    function show(label, value, meter, duration) {
         osd.label = label;
         osd.value = value || "";
         osd.meter = meter === undefined ? -1 : meter;
         panel.opacity = 1;
+        hideTimer.interval = duration || 1600;
         hideTimer.restart();
     }
 
@@ -59,6 +62,8 @@ Item {
             spacing: 14
 
             Label {
+                id: labelText
+                visible: osd.label !== ""
                 anchors.baseline: valueText.baseline
                 text: osd.label
                 color: osd.value === "" ? theme.stageForeground : theme.stageMuted
@@ -86,9 +91,17 @@ Item {
                 }
             }
 
+            TextMetrics {
+                id: valueMetrics
+                font: valueText.font
+                text: osd.value
+            }
             Label {
                 id: valueText
                 visible: osd.value !== ""
+                width: Math.min(Math.ceil(valueMetrics.advanceWidth) + 2,
+                                osd.maxWidth - 48 - (labelText.visible ? labelText.width + content.spacing : 0))
+                elide: Text.ElideMiddle
                 text: osd.value
                 color: theme.stageForeground
                 font.pixelSize: 18

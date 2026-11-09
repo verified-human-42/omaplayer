@@ -376,6 +376,10 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(!player.idle() && player.duration() > 1.5, 10000);
         QVERIFY(!player.opening());
         QVERIFY(player.error().isEmpty());
+        // A file starting shows its name in the corner.
+        QTRY_VERIFY(osd.count() > 0);
+        QCOMPARE(osd.first().first().toString(), QString("file"));
+        osd.clear();
 
         player.command({"add", "volume", "-10"}, "volume");
         QTRY_VERIFY(osd.count() > 0);
