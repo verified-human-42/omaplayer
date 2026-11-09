@@ -159,6 +159,8 @@ private:
     void loadStreamSupport();
     void loadSubtitles();
     void chooseSecondSubtitle();
+    void screenshotInSoftware(const QString &path, const QString &kind);
+    void finishScreenshot(const QString &kind, bool ok);
     static QStringList normalize(const QVariantList &items);
 
     mpv_handle *m_mpv = nullptr;

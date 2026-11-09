@@ -1,98 +1,76 @@
 import QtQuick
 import QtQuick.Controls
-import QtQuick.Controls.impl
+import QtQuick.Effects
 
-// Corner messages, drawn like Omarchy's own OSD: a card with an icon, the
-// message in bold, and a flat bar for levels. It sits top left, where
-// Windows players put it.
+// Corner messages the way Windows players draw them: bare text on the
+// picture, outlined and shadowed so it reads over anything, top left. It
+// grows with the window, so fullscreen on a big screen reads from the couch.
 Item {
     id: osd
 
     // What the message is about ("volume", "file", …), so a newer one of
     // another kind isn't replaced by the hover message.
     property string kind
-    readonly property bool showing: card.opacity > 0
-    property string icon
+    readonly property bool showing: line.opacity > 0
     property string label
     property string value
-    property real meter: -1
     // Long values (file names) elide to fit the window.
     property real maxWidth: 100000
+    // The stage colours: light text on the palette's darkest colour, in
+    // light themes too.
     readonly property color ink: theme.stageForeground
-    readonly property int pad: 16
-    readonly property int gap: 11
+    readonly property color edge: theme.stage
+    readonly property int size: Math.round(Math.max(16, Math.min(36, (Window.window ? Window.window.height : 720) * 0.025)))
 
-    // message: { icon, label, value, meter (0–1, or none), duration (ms) }
+    // message: { label, value, duration (ms) }
     function show(message) {
-        osd.icon = message.icon || "";
         osd.label = message.label || "";
         osd.value = message.value || "";
-        osd.meter = message.meter === undefined || message.meter < 0 ? -1 : Math.min(1, message.meter);
         hideTimer.interval = message.duration || 1600;
-        card.opacity = 1;
+        line.opacity = 1;
         hideTimer.restart();
     }
 
     function hide() {
         hideTimer.stop();
-        card.opacity = 0;
+        line.opacity = 0;
     }
 
-    implicitWidth: card.width
-    implicitHeight: card.height
+    implicitWidth: line.width
+    implicitHeight: line.height
 
-    Card {
-        id: card
-        width: content.width + 2 * (osd.pad + border.width)
-        height: 24 + 2 * (osd.pad + border.width)
-        fill: 0.5
+    Item {
+        id: line
+        width: row.width
+        height: row.height
         opacity: 0
         visible: opacity > 0
+        layer.enabled: visible
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: osd.edge
+            shadowBlur: 0.45
+            shadowOpacity: 0.95
+            shadowHorizontalOffset: 0
+            shadowVerticalOffset: 1
+        }
 
         Behavior on opacity {
             NumberAnimation { duration: 140 }
         }
 
         Row {
-            id: content
-            x: osd.pad + card.border.width
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: osd.gap
-
-            IconImage {
-                visible: osd.icon !== ""
-                anchors.verticalCenter: parent.verticalCenter
-                source: osd.icon !== "" ? "qrc:/icons/" + osd.icon + ".svg" : ""
-                sourceSize: Qt.size(22, 22)
-                color: osd.ink
-            }
+            id: row
+            spacing: Math.round(osd.size * 0.4)
 
             Label {
                 id: labelText
                 visible: osd.label !== ""
-                anchors.verticalCenter: parent.verticalCenter
                 text: osd.label
-                color: theme.stageMuted
-                font.pixelSize: 14
-            }
-
-            Rectangle {
-                visible: osd.meter >= 0
-                anchors.verticalCenter: parent.verticalCenter
-                width: 142
-                height: 6
-                color: Qt.rgba(osd.ink.r, osd.ink.g, osd.ink.b, 0.45)
-
-                Rectangle {
-                    height: parent.height
-                    width: parent.width * Math.max(0, osd.meter)
-                    color: theme.accent
-
-                    Behavior on width {
-                        enabled: card.opacity === 1
-                        NumberAnimation { duration: 140; easing.type: Easing.OutCubic }
-                    }
-                }
+                color: osd.ink
+                style: Text.Outline
+                styleColor: osd.edge
+                font.pixelSize: osd.size
             }
 
             TextMetrics {
@@ -103,16 +81,14 @@ Item {
             Label {
                 id: valueText
                 visible: osd.value !== ""
-                anchors.verticalCenter: parent.verticalCenter
                 width: Math.min(Math.ceil(valueMetrics.advanceWidth) + 2,
-                                osd.maxWidth - 2 * (osd.pad + card.border.width)
-                                - (osd.icon !== "" ? 22 + osd.gap : 0)
-                                - (labelText.visible ? labelText.width + osd.gap : 0)
-                                - (osd.meter >= 0 ? 142 + osd.gap : 0))
+                                osd.maxWidth - (labelText.visible ? labelText.width + row.spacing : 0))
                 elide: Text.ElideMiddle
                 text: osd.value
                 color: osd.ink
-                font.pixelSize: 14
+                style: Text.Outline
+                styleColor: osd.edge
+                font.pixelSize: osd.size
                 font.bold: true
             }
         }
@@ -121,6 +97,6 @@ Item {
     Timer {
         id: hideTimer
         interval: 1600
-        onTriggered: card.opacity = 0
+        onTriggered: line.opacity = 0
     }
 }

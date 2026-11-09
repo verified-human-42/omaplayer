@@ -149,16 +149,14 @@ ApplicationWindow {
             osd.show({ icon: player.paused ? "pause" : "play", value: player.paused ? qsTr("Paused") : qsTr("Playing") });
             break;
         case "position":
-            osd.show({ value: Format.time(player.position) + " / " + Format.time(player.duration),
-                       meter: player.duration > 0 ? player.position / player.duration : -1 });
+            osd.show({ value: Format.time(player.position) + " / " + Format.time(player.duration)
+                              + (player.duration > 0 ? "  (" + Math.round(100 * player.position / player.duration) + "%)" : "") });
             break;
         case "frame":
             osd.show({ label: qsTr("Frame"), value: Format.precise(player.position) });
             break;
         case "volume":
-            osd.show({ icon: player.muted || player.volume === 0 ? "volume-muted" : "volume",
-                       value: Math.round(player.volume) + "%",
-                       meter: player.volume / (settings.values["audio/boost"] ? 150 : 100) });
+            osd.show({ label: qsTr("Volume"), value: Math.round(player.volume) + "%" });
             break;
         case "mute":
             osd.show({ icon: player.muted ? "volume-muted" : "volume", label: qsTr("Mute"),
@@ -230,7 +228,7 @@ ApplicationWindow {
             osd.show({ icon: "video", label: qsTr("Saved"), value: shot.substring(shot.lastIndexOf("/") + 1), duration: 2500 });
             break;
         case "screenshot-copy":
-            osd.show({ icon: "video", label: qsTr("Frame"), value: qsTr("Copied") });
+            osd.show({ value: qsTr("Frame copied") });
             break;
         case "screenshot-failed":
             osd.show({ icon: "video", label: qsTr("Screenshot"), value: qsTr("Couldn't save it") });
@@ -257,7 +255,7 @@ ApplicationWindow {
             osd.show({ icon: "video", label: qsTr("Color"), value: percent(player.get("saturation")) });
             break;
         case "picture-reset":
-            osd.show({ icon: "video", label: qsTr("Picture"), value: qsTr("Reset") });
+            osd.show({ value: qsTr("Picture adjustments reset") });
             break;
         // A file starting: its place in the playlist and its name, and where
         // it picks up when it resumes.
@@ -498,7 +496,7 @@ ApplicationWindow {
         Loader {
             active: win.infoVisible && !player.idle
             x: 18
-            y: osd.y + osd.implicitHeight + 16
+            y: osd.y + osd.implicitHeight + Math.round(osd.size * 0.8)
             sourceComponent: PlaybackInfo {}
         }
 

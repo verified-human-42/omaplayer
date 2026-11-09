@@ -4,12 +4,14 @@
 #include <QCollator>
 #include <QDateTime>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QImage>
 #include <QLoggingCategory>
 #include <QStandardPaths>
+#include <QThread>
 #include <QTimer>
 #include <QUrl>
 #include <utility>
@@ -307,15 +309,9 @@ void Player::handleEvent(const mpv_event &event) {
                 emit osd("screenshot-failed");
             break;
         }
-        if (kind == "screenshot-copy") {
-            // The frame went to a file first; the clipboard keeps its own copy.
-            const QImage frame(m_lastScreenshot);
-            QFile::remove(m_lastScreenshot);
-            if (frame.isNull()) {
-                emit osd("screenshot-failed");
-                break;
-            }
-            QGuiApplication::clipboard()->setImage(frame);
+        if (kind.startsWith("screenshot")) {
+            finishScreenshot(kind, true);
+            break;
         }
         refresh(kind);
         emit osd(kind);
@@ -790,8 +786,93 @@ void Player::screenshot(bool toClipboard) {
             path = QString("%1 (%2).%3").arg(base).arg(n).arg(m_screenshotFormat);
     }
     m_lastScreenshot = path;
-    command({"screenshot-to-file", path, m_screenshotSubtitles ? "subtitles" : "video"},
-            toClipboard ? "screenshot-copy" : "screenshot");
+    const QString kind = toClipboard ? "screenshot-copy" : "screenshot";
+    const QString hwdec = get("hwdec-current").toString();
+    if (hwdec.isEmpty() || hwdec == "no")
+        command({"screenshot-to-file", path, m_screenshotSubtitles ? "subtitles" : "video"}, kind);
+    else
+        screenshotInSoftware(path, kind);
+}
+
+// A hardware-decoded frame lives on the GPU, out of reach of mpv's own
+// screenshot through libmpv. Rather than copy every frame back (slower for
+// all playback), a second mpv that decodes in software opens the same moment,
+// with the same subtitle, and takes the picture, on a thread of its own.
+void Player::screenshotInSoftware(const QString &path, const QString &kind) {
+    const QString source = m_path.contains("://") ? get("stream-open-filename").toString() : m_path;
+    const double at = get("time-pos").toDouble();
+    QString subtitleFile;
+    QString subtitleId = "no";
+    if (m_screenshotSubtitles && get("sub-visibility").toBool()) {
+        const QVariant sid = get("sid");
+        for (const auto &item : m_tracks) {
+            const QVariantMap track = item.toMap();
+            if (track.value("type") == "sub" && track.value("id") == sid) {
+                if (track.value("external").toBool())
+                    subtitleFile = track.value("external-filename").toString();
+                else
+                    subtitleId = track.value("id").toString();
+            }
+        }
+    }
+    QHash<QByteArray, QByteArray> style;
+    for (const char *name : {"sub-delay", "sub-scale", "sub-pos", "sub-font", "sub-border-style", "sub-ass-override",
+                             "video-aspect-override", "video-rotate"})
+        style.insert(name, toMpv(get(name)));
+
+    auto *worker = QThread::create([this, path, kind, source, at, subtitleFile, subtitleId, style] {
+        mpv_handle *shot = mpv_create();
+        bool ok = false;
+        if (shot) {
+            for (const auto &[name, value] : std::initializer_list<std::pair<const char *, QByteArray>>{
+                     {"config", "no"}, {"vo", "null"}, {"ao", "null"}, {"hwdec", "no"}, {"pause", "yes"},
+                     {"hr-seek", "yes"}, {"ytdl", "no"}, {"load-scripts", "no"}, {"sub-auto", "no"},
+                     {"sub-codepage", "utf-8"}, {"resume-playback", "no"}, {"idle", "no"},
+                     {"start", QByteArray::number(at, 'f', 3)}, {"sid", subtitleId.toUtf8()}})
+                mpv_set_option_string(shot, name, value.constData());
+            for (auto it = style.begin(); it != style.end(); ++it)
+                mpv_set_option_string(shot, it.key().constData(), it.value().constData());
+            if (mpv_initialize(shot) >= 0) {
+                const QByteArray file = source.toUtf8();
+                const char *load[] = {"loadfile", file.constData(), nullptr};
+                mpv_command(shot, load);
+                QElapsedTimer clock;
+                clock.start();
+                while (clock.elapsed() < 15000) {
+                    const mpv_event *event = mpv_wait_event(shot, 1);
+                    if (event->event_id == MPV_EVENT_FILE_LOADED && !subtitleFile.isEmpty()) {
+                        const QByteArray subtitle = subtitleFile.toUtf8();
+                        const char *add[] = {"sub-add", subtitle.constData(), "select", nullptr};
+                        mpv_command(shot, add);
+                    } else if (event->event_id == MPV_EVENT_PLAYBACK_RESTART) {
+                        const QByteArray target = path.toUtf8();
+                        const char *take[] = {"screenshot-to-file", target.constData(),
+                                              subtitleId == "no" && subtitleFile.isEmpty() ? "video" : "subtitles", nullptr};
+                        ok = mpv_command(shot, take) >= 0;
+                        break;
+                    } else if (event->event_id == MPV_EVENT_END_FILE || event->event_id == MPV_EVENT_SHUTDOWN) {
+                        break;
+                    }
+                }
+            }
+            mpv_terminate_destroy(shot);
+        }
+        QMetaObject::invokeMethod(this, [this, kind, ok] { finishScreenshot(kind, ok); }, Qt::QueuedConnection);
+    });
+    connect(worker, &QThread::finished, worker, &QObject::deleteLater);
+    worker->start();
+}
+
+void Player::finishScreenshot(const QString &kind, bool ok) {
+    if (ok && kind == "screenshot-copy") {
+        // The frame went to a file first; the clipboard keeps its own copy.
+        const QImage frame(m_lastScreenshot);
+        QFile::remove(m_lastScreenshot);
+        ok = !frame.isNull();
+        if (ok)
+            QGuiApplication::clipboard()->setImage(frame);
+    }
+    emit osd(ok ? kind : QString("screenshot-failed"));
 }
 
 void Player::resetPicture() {

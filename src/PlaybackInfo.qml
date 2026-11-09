@@ -1,19 +1,29 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Effects
 import QtQuick.Layouts
 import "Format.js" as Format
 
-// The Tab panel: what's playing and how, refreshed twice a second.
-TitledBox {
+// The Tab panel: what's playing and how, refreshed twice a second, set as
+// bare outlined text on the picture like the corner messages.
+Item {
     id: info
 
     property var rows: []
-
-    title: qsTr("Playback")
-    implicitWidth: grid.implicitWidth + 36
-    implicitHeight: grid.implicitHeight + titleHeight / 2 + 34
-
     readonly property color ink: theme.stageForeground
+    readonly property color edge: theme.stage
+    readonly property int size: Math.round(Math.max(13, Math.min(26, (Window.window ? Window.window.height : 720) * 0.018)))
+
+    implicitWidth: grid.implicitWidth
+    implicitHeight: grid.implicitHeight
+    layer.enabled: true
+    layer.effect: MultiEffect {
+        shadowEnabled: true
+        shadowColor: info.edge
+        shadowBlur: 0.45
+        shadowOpacity: 0.95
+        shadowVerticalOffset: 1
+    }
 
     function number(value, digits) {
         return value === undefined || value === null ? "" : Number(value).toLocaleString(Qt.locale(), 'f', digits);
@@ -52,11 +62,9 @@ TitledBox {
 
     GridLayout {
         id: grid
-        x: 18
-        y: info.titleHeight / 2 + 17
         columns: 2
-        columnSpacing: 18
-        rowSpacing: 4
+        columnSpacing: Math.round(info.size * 1.2)
+        rowSpacing: Math.round(info.size * 0.25)
 
         Repeater {
             model: info.rows
@@ -64,11 +72,14 @@ TitledBox {
                 required property int index
                 required property var modelData
                 text: modelData
-                color: index % 2 === 0 ? theme.stageMuted : theme.stageForeground
-                font.pixelSize: 13
-                font.bold: index === 1 // the file name
+                color: info.ink
+                opacity: index % 2 === 0 ? 0.75 : 1
+                style: Text.Outline
+                styleColor: info.edge
+                font.pixelSize: info.size
+                font.bold: index % 2 === 1
                 elide: Text.ElideMiddle
-                Layout.maximumWidth: index % 2 === 0 ? 120 : 460
+                Layout.maximumWidth: index % 2 === 0 ? info.size * 9 : info.size * 36
             }
         }
     }

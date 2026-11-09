@@ -139,6 +139,16 @@ int main(int argc, char *argv[]) {
         qCInfo(lcTiming, "window shown at %lld", QDateTime::currentMSecsSinceEpoch());
     }, Qt::ConnectionType(Qt::DirectConnection | Qt::SingleShotConnection));
 
+    // For development: OMAPLAYER_DO=id,id[:ms] runs actions from the table
+    // after ms (default 2000), as if their keys were pressed.
+    if (const QString run = qEnvironmentVariable("OMAPLAYER_DO"); !run.isEmpty()) {
+        const int after = run.section(':', 1, 1).isEmpty() ? 2000 : run.section(':', 1, 1).toInt();
+        QTimer::singleShot(after, &actions, [&actions, run] {
+            for (const auto &id : run.section(':', 0, 0).split(',', Qt::SkipEmptyParts))
+                actions.trigger(id);
+        });
+    }
+
     // For development: OMAPLAYER_GRAB=shot.png[:ms] saves what the window
     // shows, video included, after ms (default 3000), then quits.
     if (const QString grab = qEnvironmentVariable("OMAPLAYER_GRAB"); !grab.isEmpty()) {
