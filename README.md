@@ -69,6 +69,9 @@ encoding whose text reads like real language: Korean, Japanese, Chinese,
 Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 70+ real lines down to a single word, with no hint.
 
+- **Where PotPlayer slips.** On an English Windows, PotPlayer shows a Korean
+  SMI saved in CP949 as gibberish, because it trusts the system codepage.
+  OmaPlayer reads the text itself, whatever the system language.
 - **SMI files get every language.** Korean and English classes become separate
   tracks instead of one jumbled track.
 - **Stream captions in your language**, the site's own translations included.
@@ -109,8 +112,8 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | `Home` `End` · `Ctrl+Home` | Previous / next subtitle line · replay this one |
 | `,` `.` · `/` | Subtitles earlier / later · reset sync |
 | `Alt+↑` `Alt+↓` · `Alt+PgUp` `Alt+PgDn` | Subtitles up / down · bigger / smaller |
-| `W` `E` · `R` `T` · `Y` `U` · `I` `O` · `Q` | Brightness · contrast · saturation · hue · reset |
-| `Ctrl+Enter` · `Ctrl+F6` · `Ctrl+Z` | Fill the screen · aspect ratio · mirror |
+| `W` `E` · `R` `T` · `Y` `U` · `I` `O` · `Q` | Brightness · contrast · saturation · hue · all off / back |
+| `Ctrl+Enter` · `Ctrl+F6` · `Ctrl+Z` | Fill the screen · next aspect ratio · mirror |
 | `Ctrl+E` / `K` · `Ctrl+C` | Save a screenshot · copy the frame |
 | `Enter` / `Alt+Enter` / `F11` · `Esc` | Fullscreen · leave it |
 | `Tab` · `P` | Playback info · picture in picture |
@@ -121,8 +124,8 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | `?` | Every shortcut |
 
 Mouse: click to pause, double-click for fullscreen, wheel for volume,
-right-click for the menu (aspect ratio, rotate, repeat, and the rest live
-there), and click the clock to show time remaining.
+right-click for the menu (pick a subtitle or audio track, an aspect ratio,
+and every action above), and click the clock to show time remaining.
 
 </details>
 
