@@ -79,7 +79,8 @@ const QList<Settings::Spec> &Settings::specs() {
         {"subtitles/auto", "fuzzy", {"fuzzy", "exact", "no"}},
         {"subtitles/language", ""},
         {"subtitles/encoding", "auto", {"auto", "utf-8", "japanese", "chinese-simplified", "chinese-traditional", "korean"}},
-        {"subtitles/scale", 1.0, {}, 0.5, 2.0},
+        // A size people read from the couch, as the Windows players set theirs.
+        {"subtitles/scale", 1.3, {}, 0.5, 2.0},
         {"subtitles/lift", 0.0, {}, 0.0, 0.3},
         {"subtitles/background", false},
         {"subtitles/restyle", false},
