@@ -352,5 +352,9 @@
   "Subtitles Back in Place": "字幕を元の位置に戻す",
   "To 30 Seconds Before the End": "終了30秒前へ",
   "To the Middle": "中間へ",
-  "To the Start": "先頭へ"
+  "To the Start": "先頭へ",
+  "Picture in Picture": "ピクチャー・イン・ピクチャー",
+  "Updates": "アップデート",
+  "With omarchy-update": "omarchy-update で更新",
+  "Run the install line again": "インストールコマンドを再実行"
 }

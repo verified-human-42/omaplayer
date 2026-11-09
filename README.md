@@ -32,6 +32,9 @@ had, doesn't run here.
   open. No skins, no ads, no add-on store.
 - **Your theme is the skin.** Every color comes from your Omarchy theme, and it
   changes the moment you switch themes. Clean, keyboard-first, no chrome to spare.
+- **A citizen of the desktop.** Media keys, headphone buttons, and the Omarchy
+  bar control it. `P` pops the video into a pinned corner while you work.
+  `omarchy-update` keeps it current.
 - **mpv speed, no compromise.** Hardware decoding, video drawn straight into the
   window, folder playlists, resume where you left off, and YouTube by URL.
 - **Subtitles never come out garbled.** Any encoding, any language. See below.
@@ -109,7 +112,7 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | `Ctrl+Enter` · `Ctrl+F6` · `Ctrl+Z` | Fill the screen · aspect ratio · mirror |
 | `Ctrl+E` / `K` · `Ctrl+C` | Save a screenshot · copy the frame |
 | `Enter` / `Alt+Enter` / `F11` · `Esc` | Fullscreen · leave it |
-| `Tab` | Playback info |
+| `Tab` · `P` | Playback info · picture in picture |
 | `F6` / `Ctrl+L` | Playlist |
 | `F5` / `Ctrl+,` | Settings |
 | `Ctrl+O` · `Ctrl+V` · `Ctrl+Y` | Open a file · open from the clipboard · reopen the last file |
@@ -135,5 +138,5 @@ C++ and Qt Quick around libmpv. See [`AGENTS.md`](AGENTS.md) for how it fits tog
 ## License
 
 GPL-3.0. Parts adapted from Omacut and Monologue are MIT; see [`NOTICE`](NOTICE).
-Screenshots show [“DHH discusses Linux and Omarchy”](https://www.youtube.com/watch?v=zikJTpJgzzo)
-by typecraft, streamed from YouTube.
+Screenshots show [“DHH: Future of Programming, AI, Agentic Engineering, Vibe Coding & Linux”](https://www.youtube.com/watch?v=NYFGCESmikA)
+(Lex Fridman Podcast #501), streamed from YouTube.
