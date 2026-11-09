@@ -17,7 +17,7 @@
 
 <a href="https://github.com/verified-human-42/omaplayer/releases/download/v1.0.0/omaplayer-demo.mp4"><img src="docs/demo.webp" width="860" alt="OmaPlayer in motion: the right-click menu, subtitles in four legacy encodings, live theme switching, and picture in picture"></a>
 
-<sub>Highlights. The full 90-second demo: <a href="https://github.com/verified-human-42/omaplayer/releases/download/v1.0.0/omaplayer-demo.mp4">omaplayer-demo.mp4</a></sub>
+<sub>Highlights. The full demo, with sound (72 s): <a href="https://github.com/verified-human-42/omaplayer/releases/download/v1.0.0/omaplayer-demo.mp4">omaplayer-demo.mp4</a></sub>
 
 </div>
 
