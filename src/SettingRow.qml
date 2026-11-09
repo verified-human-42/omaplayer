@@ -25,7 +25,16 @@ Item {
     signal pointed()
     signal captureRequested()
 
-    implicitHeight: Math.max(labels.implicitHeight, control.implicitHeight) + 22
+    // Room between the row's side margins. A control that would take more
+    // than half of it (a long segmented choice in a narrow window, a field)
+    // moves under its label instead of running over it. Facts elide instead,
+    // and key bindings stay put, since hovering one widens it.
+    readonly property real room: width - 32
+    readonly property bool stacked: control.item !== null && entry.type !== "fact" && !binding
+                                    && control.item.implicitWidth > room * 0.5
+
+    implicitHeight: stacked ? labels.implicitHeight + 10 + control.height + 22
+                            : Math.max(labels.implicitHeight, control.height) + 22
 
     // Arrow keys and h/l nudge the value; Space and Enter flip or advance it.
     function step(delta) {
@@ -90,8 +99,10 @@ Item {
         id: labels
         anchors.left: parent.left
         anchors.leftMargin: 16
-        anchors.verticalCenter: parent.verticalCenter
-        width: parent.width * 0.5
+        anchors.top: row.stacked ? parent.top : undefined
+        anchors.topMargin: 11
+        anchors.verticalCenter: row.stacked ? undefined : parent.verticalCenter
+        width: row.stacked ? row.room : row.room - control.width - 24
         spacing: 3
 
         Row {
@@ -150,10 +161,10 @@ Item {
 
     Loader {
         id: control
-        anchors.right: parent.right
-        anchors.rightMargin: 16
-        anchors.verticalCenter: parent.verticalCenter
-        width: item ? Math.min(item.implicitWidth, row.width * 0.44) : 0
+        x: row.stacked ? 16 : row.width - 16 - width
+        y: row.stacked ? labels.y + labels.height + 10 : (row.height - height) / 2
+        width: item ? Math.min(item.implicitWidth, row.stacked ? row.room : row.room * 0.6) : 0
+        height: item ? item.implicitHeight : 0
         sourceComponent: {
             switch (row.entry.type) {
             case "switch": return switchControl;
@@ -360,14 +371,41 @@ Item {
         }
     }
 
+    // A value, elided in the middle when long. With a url it's a link: the
+    // web in the browser, a folder in the file manager. Its width comes from
+    // the metrics, not the label, which the elision would feed back into.
     Component {
         id: factControl
-        Label {
-            text: row.entry.value === undefined ? "" : String(row.entry.value)
-            color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.75)
-            font.pixelSize: 12
-            horizontalAlignment: Text.AlignRight
-            elide: Text.ElideMiddle
+        Item {
+            readonly property string url: row.entry.url || ""
+            implicitWidth: Math.ceil(metrics.advanceWidth) + 2
+            implicitHeight: fact.implicitHeight
+
+            TextMetrics {
+                id: metrics
+                font: fact.font
+                text: fact.text
+            }
+            Label {
+                id: fact
+                anchors.fill: parent
+                text: row.entry.value === undefined ? "" : String(row.entry.value)
+                color: parent.url !== "" && link.hovered ? theme.accent
+                                                         : Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.75)
+                font.pixelSize: 12
+                font.underline: parent.url !== "" && link.hovered
+                horizontalAlignment: Text.AlignRight
+                elide: Text.ElideMiddle
+            }
+            HoverHandler {
+                id: link
+                enabled: parent.url !== ""
+                cursorShape: Qt.PointingHandCursor
+            }
+            TapHandler {
+                enabled: parent.url !== ""
+                onTapped: Qt.openUrlExternally(parent.url)
+            }
         }
     }
 }

@@ -217,11 +217,19 @@ Popup {
                     {
                         title: "Omaplayer", note: qsTr("A media player for Omarchy, built on mpv."),
                         rows: [
-                            { type: "fact", label: qsTr("Version"), value: Qt.application.version },
+                            { type: "fact", label: qsTr("Version"), value: Qt.application.version,
+                              url: "https://github.com/verified-human-42/omaplayer/releases" },
+                            { type: "fact", label: qsTr("Website"), value: "github.com/verified-human-42/omaplayer",
+                              url: "https://github.com/verified-human-42/omaplayer" },
+                            { type: "fact", label: qsTr("License"), value: "GPL-3.0",
+                              url: "https://github.com/verified-human-42/omaplayer/blob/main/LICENSE" },
                             { type: "fact", label: "mpv", value: player.get("mpv-version") },
                             { type: "fact", label: "FFmpeg", value: player.get("ffmpeg-version") },
-                            { type: "fact", label: qsTr("Settings file"), value: settings.fileName() },
-                            { type: "fact", label: qsTr("Resume positions"), value: player.get("watch-later-dir") },
+                            // Paths open their folder in the file manager.
+                            { type: "fact", label: qsTr("Settings file"), value: settings.fileName(),
+                              url: folderUrl(settings.fileName()) },
+                            { type: "fact", label: qsTr("Resume positions"), value: player.get("watch-later-dir"),
+                              url: folderUrl(player.get("watch-later-dir") + "/") },
                         ]
                     },
                 ]
@@ -384,6 +392,10 @@ Popup {
     closePolicy: Popup.NoAutoClose
 
     onClosed: capturing = ""
+
+    function folderUrl(path) {
+        return "file://" + String(path).substring(0, String(path).lastIndexOf("/"));
+    }
 
     // Placeholder for the subtitle languages: what an empty field follows.
     readonly property string settingsLanguageHint: translator.language
@@ -731,6 +743,8 @@ Popup {
                         }
                         Label {
                             visible: group.modelData.note !== ""
+                            width: parent.width
+                            wrapMode: Text.WordWrap
                             text: group.modelData.note
                             color: page.shade(0.6)
                             font.pixelSize: 11
