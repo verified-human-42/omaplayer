@@ -3,7 +3,7 @@
 <img src="pkgbuild/omaplayer.svg" width="88" alt="">
 
 # Omaplayer
-
+<br> <br>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
   <img src="docs/hero-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: Omaplayer.">
