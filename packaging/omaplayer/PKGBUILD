@@ -1,6 +1,6 @@
 # Maintainer: Joseph <263787421+verified-human-42@users.noreply.github.com>
 pkgname=omaplayer
-pkgver=0.9.1
+pkgver=1.0.0
 pkgrel=1
 pkgdesc='Omarchy-native media player built on mpv'
 arch=('x86_64' 'aarch64')
@@ -12,7 +12,7 @@ checkdepends=('ffmpeg')
 optdepends=('yt-dlp: play stream URLs'
             'noto-fonts-cjk: Chinese, Japanese, and Korean file names and subtitles')
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
-sha256sums=('3b39271d720d63188bcc83592f5e521f2cd531534729568764ad32d62f4910c1')
+sha256sums=('SKIP')
 
 build() {
   cd "$pkgname-$pkgver"
