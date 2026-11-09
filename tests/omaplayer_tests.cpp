@@ -522,7 +522,7 @@ private slots:
         expect("deinterlace", "false");
         expect("sub-pos", "100");
         expect("sub-font", "sans-serif");
-        expect("ytdl-format", "bestvideo+bestaudio/best");
+        expect("ytdl-format", "bestvideo[height<=?1080]+bestaudio/best[height<=?1080]/best");
 
         settings.set("playback/atEnd", "clear");
         settings.set("playback/exactSeek", true);

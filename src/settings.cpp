@@ -51,7 +51,9 @@ const QList<Settings::Spec> &Settings::specs() {
         {"video/deband", false},
         {"video/deinterlace", false},
         {"video/keepAwake", true},
-        {"video/streamQuality", "best", {"best", "2160", "1440", "1080", "720", "480"}},
+        // 1080p by default: "best" is often 4K AV1, which many graphics cards
+        // can't decode, and software decoding at that size drops frames.
+        {"video/streamQuality", "1080", {"best", "2160", "1440", "1080", "720", "480"}},
         {"video/screenshotFolder", ""},
         {"video/screenshotFormat", "png", {"png", "jpg", "webp"}},
         {"video/screenshotSubtitles", true},
