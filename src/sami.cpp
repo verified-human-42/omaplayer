@@ -1,4 +1,5 @@
 #include "sami.h"
+#include "subtitles.h"
 
 #include <QCryptographicHash>
 #include <QDir>
@@ -208,7 +209,7 @@ QList<Sami::Track> Sami::convert(const QString &path, const QString &forced, con
         track.cues = count;
         track.path = QDir(directory).filePath(prefix + "-" + (key.isEmpty() ? QStringLiteral("default") : key) + ".srt");
         QFile out(track.path + ".part");
-        if (!out.open(QIODevice::WriteOnly) || out.write(srt.toUtf8()) < 0)
+        if (!out.open(QIODevice::WriteOnly) || out.write(Subtitles::keepKoreanWords(srt).toUtf8()) < 0)
             continue;
         out.close();
         QFile::remove(track.path);

@@ -22,6 +22,13 @@ bool isSubtitle(const QString &path);
 // name contains it, "no" none.
 QStringList besides(const QString &video, const QString &mode);
 
+// Korean wraps at spaces, but the renderer may break between any two
+// syllables ("있 / 다면"). This glues each word's syllables with an invisible
+// word joiner (U+2060). Words over 12 syllables are left breakable, so a
+// strange long line still wraps instead of running off the screen. ass: only
+// the Dialogue text, outside {\override} tags, is touched.
+QString keepKoreanWords(const QString &text, bool ass = false);
+
 // forced and language are as for TextEncoding::decode.
 QList<Track> prepare(const QString &path, const QString &forced, const QString &language, const QString &cacheDirectory);
 

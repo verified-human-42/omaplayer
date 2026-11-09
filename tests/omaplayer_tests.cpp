@@ -29,6 +29,7 @@
 #include "textencoding.h"
 #include "player.h"
 #include "settings.h"
+#include "subtitles.h"
 #include "theme.h"
 #include "timing.h"
 #include "translator.h"
@@ -333,6 +334,22 @@ private slots:
         QCOMPARE(result.encoding, ascii ? QString("utf-8") : codepage);
     }
 
+    // Korean breaks at spaces, never inside a word, unless a "word" is too
+    // long to be one; styled subtitles keep their tags and font names.
+    void koreanWrapsAtSpaces()
+    {
+        const QChar joiner(0x2060);
+        const QString line = Subtitles::keepKoreanWords("바이브 코딩할 수 있다면");
+        QCOMPARE(line, QString("바") + joiner + "이" + joiner + "브 코" + joiner + "딩" + joiner + "할 수 있" + joiner + "다" + joiner + "면");
+        QCOMPARE(Subtitles::keepKoreanWords("Hello, world"), QString("Hello, world"));
+        const QString long13 = QString(13, QChar(0xAC00));
+        QCOMPARE(Subtitles::keepKoreanWords(long13), long13);
+        const QString ass = "Style: Default,맑은 고딕,40\nDialogue: 0,0:00:01.00,0:00:02.00,Default,,0,0,0,,{\\fn나눔}안녕 세상";
+        const QString kept = Subtitles::keepKoreanWords(ass, true);
+        QVERIFY(kept.contains("Style: Default,맑은 고딕,40"));
+        QVERIFY(kept.contains("{\\fn나눔}안" + QString(joiner) + "녕 세" + QString(joiner) + "상"));
+    }
+
     void unicodeIsRecognised()
     {
         const QString text = "한글 자막 · 日本語 · 中文";
@@ -372,7 +389,7 @@ private slots:
 
         QFile korean(tracks[0].path);
         QVERIFY(korean.open(QIODevice::ReadOnly));
-        const QString srt = QString::fromUtf8(korean.readAll());
+        const QString srt = QString::fromUtf8(korean.readAll()).remove(QChar(0x2060));
         QVERIFY(srt.contains("00:00:01,000 --> 00:00:04,000\n안녕하세요\n두 줄 & 자막"));
         QVERIFY(srt.contains("<font color=\"#ffff00\">노란색</font> 자막"));
     }
