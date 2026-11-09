@@ -9,8 +9,8 @@ A beautiful, opinionated media player for [Omarchy](https://omarchy.org), built 
 <br>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-dark.svg">
-  <img src="docs/banner-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion, not debate. Best player on Omarchy: Omaplayer.">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
+  <img src="docs/hero-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: Omaplayer.">
 </picture>
 
 <br><br>
