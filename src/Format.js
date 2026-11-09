@@ -22,3 +22,18 @@ function fileName(path) {
     var slash = s.lastIndexOf("/");
     return slash >= 0 && slash < s.length - 1 ? s.substring(slash + 1) : s;
 }
+
+// A track as people say it: its title, and its language in that language
+// ("日本語", "Русский") rather than a code. "Track 3" when it has neither.
+function trackLabel(track, fallback) {
+    var lang = track.lang || "";
+    // A bare code names the language, not a country's variety of it.
+    var native = lang === "en" || lang === "eng" ? "English" : lang !== "" ? Qt.locale(lang).nativeLanguageName : "";
+    if (native === "" || native === "C")
+        native = lang;
+    else
+        native = native.charAt(0).toUpperCase() + native.slice(1);
+    var title = track.title && track.title !== lang ? track.title : "";
+    var parts = [title, title.indexOf(native) >= 0 ? "" : native].filter(function (part) { return part; });
+    return parts.length > 0 ? parts.join(" · ") : fallback;
+}

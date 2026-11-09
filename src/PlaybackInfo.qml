@@ -60,7 +60,7 @@ Item {
         var subtitle = qsTr("Off");
         player.tracks.forEach(function (track) {
             if (track.type === "sub" && track.selected && track["main-selection"] !== 1)
-                subtitle = [track.title, track.lang].filter(function (part) { return part; }).join(" · ") || qsTr("Track %1").arg(track.id);
+                subtitle = Format.trackLabel(track, qsTr("Track %1").arg(track.id));
         });
         var percent = player.duration > 0 ? " (" + number(100 * player.position / player.duration, 1) + "%)" : "";
         var c = theme;

@@ -136,10 +136,8 @@ ApplicationWindow {
         var tracks = player.tracks;
         for (var i = 0; i < tracks.length; ++i) {
             var track = tracks[i];
-            if (track.type === type && track.selected) {
-                var parts = [track.title, track.lang].filter(function (part) { return part; });
-                return parts.length > 0 ? parts.join(" · ") : qsTr("Track %1").arg(track.id);
-            }
+            if (track.type === type && track.selected)
+                return Format.trackLabel(track, qsTr("Track %1").arg(track.id));
         }
         return qsTr("Off");
     }
@@ -270,7 +268,7 @@ ApplicationWindow {
             var second = player.get("secondary-sid"), name = qsTr("Off");
             player.tracks.forEach(function (track) {
                 if (track.type === "sub" && track.id === second)
-                    name = [track.title, track.lang].filter(function (part) { return part; }).join(" · ") || qsTr("Track %1").arg(track.id);
+                    name = Format.trackLabel(track, qsTr("Track %1").arg(track.id));
             });
             osd.show({ icon: "subtitles", label: qsTr("Second subtitle"), value: name });
             break;

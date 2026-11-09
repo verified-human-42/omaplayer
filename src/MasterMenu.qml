@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
+import "Format.js" as Format
 
 // The right-click master menu: every action, grouped, with its key.
 // Built from the action table, so it never falls behind the keymap. The
@@ -17,8 +18,7 @@ Menu {
     property string aspect: "no"
     function tracks(type) {
         return player.tracks.filter(function (track) { return track.type === type; }).map(function (track) {
-            var name = [track.title, track.lang].filter(function (part) { return part; }).join(" · ");
-            return { id: track.id, label: name || qsTr("Track %1").arg(track.id) };
+            return { id: track.id, label: Format.trackLabel(track, qsTr("Track %1").arg(track.id)) };
         });
     }
 
