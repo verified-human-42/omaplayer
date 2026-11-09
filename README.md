@@ -69,12 +69,12 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 
 <table>
   <tr>
-    <td><img src="docs/screenshots/window-settings-subtitles.webp" alt="Subtitle settings: text encoding detection"></td>
-    <td><img src="docs/screenshots/window-info.webp" alt="Playback info panel"></td>
+    <td><img src="docs/screenshots/shot-subtitles.webp" alt="Subtitle settings: languages, a second subtitle, and text encoding"></td>
+    <td><img src="docs/screenshots/shot-info.webp" alt="Playback info drawn on the picture"></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/window-settings-keyboard.webp" alt="Key binding editor"></td>
-    <td><img src="docs/screenshots/window-settings-language.webp" alt="Language settings"></td>
+    <td><img src="docs/screenshots/shot-keyboard.webp" alt="Key binding editor"></td>
+    <td><img src="docs/screenshots/shot-language.webp" alt="Language settings"></td>
   </tr>
 </table>
 
