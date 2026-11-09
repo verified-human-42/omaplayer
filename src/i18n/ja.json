@@ -207,5 +207,6 @@
   "The language of menus, messages, and settings.": "メニュー、メッセージ、設定の言語です。",
   "Follow Omarchy": "Omarchy に合わせる",
   "Whatever Omarchy is set to, switching along with it.": "Omarchy の言語設定に従い、変更にも追従します。",
-  "Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish.": "自動では字幕ファイルごとに中身を読んで文字コードを判別します。それでも文字化けするファイルがある場合だけ選んでください。"
+  "Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish.": "自動では字幕ファイルごとに中身を読んで文字コードを判別します。それでも文字化けするファイルがある場合だけ選んでください。",
+  "Recommended": "おすすめ"
 }

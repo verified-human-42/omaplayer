@@ -207,5 +207,6 @@
   "The language of menus, messages, and settings.": "菜单、提示和设置使用的语言。",
   "Follow Omarchy": "跟随 Omarchy",
   "Whatever Omarchy is set to, switching along with it.": "使用 Omarchy 设置的语言，并随之切换。",
-  "Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish.": "自动会读取每个字幕文件并判断其编码。只有文件仍显示乱码时才需要手动选择。"
+  "Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish.": "自动会读取每个字幕文件并判断其编码。只有文件仍显示乱码时才需要手动选择。",
+  "Recommended": "推荐"
 }

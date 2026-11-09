@@ -129,11 +129,19 @@ Popup {
                             { key: "subtitles/language", type: "text", label: qsTr("Preferred languages"),
                               description: qsTr("Language codes in order, separated by commas. Empty follows Omarchy's language."),
                               placeholder: settingsLanguageHint },
-                            { key: "subtitles/encoding", type: "choice", label: qsTr("Text encoding"),
-                              description: qsTr("Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish."),
-                              options: [{ value: "auto", label: qsTr("Auto") }, { value: "utf-8", label: "UTF-8" },
-                                        { value: "japanese", label: qsTr("Japanese") }, { value: "chinese-simplified", label: qsTr("Chinese (Simplified)") },
-                                        { value: "chinese-traditional", label: qsTr("Chinese (Traditional)") }, { value: "korean", label: qsTr("Korean") }] },
+                        ]
+                    },
+                    {
+                        title: qsTr("Text encoding"),
+                        note: qsTr("Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish."),
+                        rows: [
+                            { key: "radio:encoding:auto", type: "radio", setting: "subtitles/encoding", value: "auto",
+                              label: qsTr("Auto"), description: qsTr("Recommended") },
+                            { key: "radio:encoding:utf-8", type: "radio", setting: "subtitles/encoding", value: "utf-8", label: "UTF-8", description: "Unicode" },
+                            { key: "radio:encoding:korean", type: "radio", setting: "subtitles/encoding", value: "korean", label: "한국어", description: qsTr("Korean") + " · CP949" },
+                            { key: "radio:encoding:japanese", type: "radio", setting: "subtitles/encoding", value: "japanese", label: "日本語", description: qsTr("Japanese") + " · Shift-JIS" },
+                            { key: "radio:encoding:chinese-simplified", type: "radio", setting: "subtitles/encoding", value: "chinese-simplified", label: "简体中文", description: qsTr("Chinese (Simplified)") + " · GB18030" },
+                            { key: "radio:encoding:chinese-traditional", type: "radio", setting: "subtitles/encoding", value: "chinese-traditional", label: "繁體中文", description: qsTr("Chinese (Traditional)") + " · Big5" },
                         ]
                     },
                     {

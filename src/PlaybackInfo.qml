@@ -36,7 +36,7 @@ TitledBox {
         var cache = player.get("demuxer-cache-duration");
         var dropped = (player.get("frame-drop-count") || 0) + (player.get("decoder-frame-drop-count") || 0);
         var list = [
-            qsTr("file"), Format.fileName(player.path),
+            qsTr("file"), player.path.indexOf("://") > 0 ? player.title : Format.fileName(player.path),
             qsTr("video"), join([player.get("video-format"), width ? width + "×" + height : "", fps ? qsTr("%1 fps").arg(number(fps, 3)) : "", player.get("video-params/pixelformat")]),
             qsTr("decoder"), hwdec && hwdec !== "no" ? qsTr("hardware · %1").arg(hwdec) : qsTr("software"),
             qsTr("audio"), join([player.get("audio-codec-name"), channels ? qsTr("%1 ch").arg(channels) : "", rate ? qsTr("%1 kHz").arg(number(rate / 1000, 1)) : ""]),

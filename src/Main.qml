@@ -376,7 +376,7 @@ ApplicationWindow {
         Loader {
             active: win.infoVisible && !player.idle
             x: 18
-            y: osd.y + 54
+            y: osd.y + osd.implicitHeight + 16
             sourceComponent: PlaybackInfo {}
         }
 

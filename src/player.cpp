@@ -490,6 +490,13 @@ void Player::load(const QStringList &paths) {
         QTimer::singleShot(300, this, [this, paths] { load(paths); });
         return;
     }
+    // Streams come with their captions in the preferred subtitle language,
+    // the site's own translations included (YouTube's auto-translate).
+    if (stream) {
+        const QString language = get("slang").toList().value(0).toString().section('-', 0, 0);
+        set("ytdl-raw-options", language.isEmpty() ? QString()
+                                                  : QString("write-auto-subs=,sub-langs=%1").arg(language));
+    }
 
     clearError();
     rememberPosition();
@@ -553,7 +560,11 @@ bool Player::openClipboard() {
         if (text.contains("://") || QFileInfo::exists(text))
             items.append(text);
     }
-    openPaths(items);
+    // Through open(), so a subtitle path joins what's playing.
+    QVariantList list;
+    for (const auto &item : items)
+        list.append(item);
+    open(list);
     return !items.isEmpty();
 }
 
