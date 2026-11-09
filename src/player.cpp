@@ -252,7 +252,11 @@ void Player::handleEvent(const mpv_event &event) {
         setOpening(false);
         clearError();
         loadSubtitles();
+        // Read now: the corner shows them, and their change notices can
+        // arrive after this event.
         refresh("position");
+        refresh("playlist");
+        refresh("playlist-count");
         emit fileLoaded();
         emit osd(m_position > 1 ? "resume" : "file");
         break;
@@ -349,6 +353,7 @@ void Player::refresh(const QString &kind) {
         {"audio", {Tracks, "track-list"}},
         {"subtitle", {Tracks, "track-list"}},
         {"playlist", {PlaylistPos, "playlist-pos"}},
+        {"playlist-count", {PlaylistCount, "playlist-count"}},
         {"repeat", {Repeat, "loop-playlist"}},
     };
     const auto source = sources.find(kind);

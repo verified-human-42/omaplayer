@@ -6,6 +6,8 @@ import QtQuick.Layouts
 Popup {
     id: sheet
 
+    // Sized against the window: it loads lazily, and the loader has no size.
+    parent: Overlay.overlay
     modal: true
     focus: true
     anchors.centerIn: Overlay.overlay
@@ -16,12 +18,15 @@ Popup {
     leftPadding: 24
     rightPadding: 24
 
+    // Over a playing video the picture stays in view: a light dim, and a
+    // panel that lets it show through.
     Overlay.modal: Rectangle {
-        color: Qt.rgba(0, 0, 0, 0.45)
+        color: Qt.rgba(0, 0, 0, 0.25)
     }
 
     background: TitledBox {
         title: qsTr("Shortcuts · %1").arg(actions.keymap === "mpv" ? qsTr("mpv layout") : qsTr("Omaplayer layout"))
+        fillOpacity: 0.9
     }
 
     contentItem: Flickable {
