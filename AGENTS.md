@@ -42,6 +42,8 @@ src/sami.{h,cpp}         SMI files: one SRT per language class (KRCC, ENCC, …)
 src/theme.{h,cpp}        Omarchy palette + Hyprland rounding, followed live
 src/translator.{h,cpp}   Omarchy language, followed live; catalogs in src/i18n/
 src/portalfilepicker.*   open dialogs through xdg-desktop-portal
+src/mpris.{h,cpp}        MPRIS on the session bus: media keys, playerctl, the Omarchy bar
+src/desktop.{h,cpp}      the window on Hyprland: picture in picture, the noidle tag
 src/Main.qml             the window: layout, shortcuts, mouse, OSD wording
 src/*.qml                one component per file (ControlBar, SeekBar, Osd, IdleScreen,
                          PlaylistPanel, PlaybackInfo, MasterMenu, ShortcutSheet, SettingsPage,
@@ -85,9 +87,22 @@ pkgbuild/                PKGBUILD, .desktop, icon
 - **One window.** The first instance listens on a local socket
   (`omaplayer-<uid>`); later launches with files hand them over and exit,
   unless Settings › Playback says to open a new window each time.
-- **Screen awake.** While a video plays, `main.cpp` tags the window `noidle`
-  through hyprctl, which Omarchy's Hyprland rules turn into an idle inhibitor.
-  libmpv leaves this to the app, and D-Bus inhibits may be ignored by hypridle.
+- **Screen awake.** While a video plays, `Desktop::setAwake` tags the window
+  `noidle` through hyprctl, which Omarchy's Hyprland rules turn into an idle
+  inhibitor. libmpv leaves this to the app, and D-Bus inhibits may be ignored
+  by hypridle.
+- **Picture in picture.** `Desktop::setPictureInPicture` does what Omarchy's
+  own pop-out (Super+O) does to the window (float, size, move, pin, `pop`
+  tag), to a corner sized by `Desktop::cornerFor`. Hyprland's Lua dispatchers
+  first, the classic ones as a fallback. Never probe a dispatcher without a
+  `window =`: it acts on whatever window has focus.
+- **MPRIS.** `Mpris` claims `org.mpris.MediaPlayer2.omaplayer` (or an
+  `.instance<pid>` name for a second window) and announces property changes
+  as Player emits them. Omarchy's media keys and bar go through it. Test it
+  with `busctl --user`; playerctl isn't installed on Omarchy.
+- **Updates.** `install.sh` drops a hook in
+  `~/.config/omarchy/hooks/post-update.d/omaplayer`, which `omarchy-update`
+  runs: it installs the latest release when it's newer.
 - **Screenshots.** Through libmpv, mpv can't read back a hardware-decoded
   frame, so with hwdec active `Player::screenshot` opens the same moment in a
   short-lived software-only mpv on a thread and takes the picture there.
