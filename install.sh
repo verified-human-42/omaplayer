@@ -50,8 +50,13 @@ if [[ $mode == prebuilt ]]; then
     grep -o "\"browser_download_url\": *\"[^\"]*/omaplayer-[0-9][^\"]*-$arch\.pkg\.tar\.zst\"" |
     grep -v -- '-debug-' | head -n1 | sed 's/.*"\(https[^"]*\)"$/\1/') || true
   if [[ -n $url ]]; then
+    # Downloaded first: pacman wants a signature for packages it fetches from
+    # a URL itself, and the release packages aren't signed.
+    work=$(mktemp -d)
+    trap 'rm -rf "$work"' EXIT
+    curl -fL --progress-bar -o "$work/${url##*/}" "$url"
     make_way_for omaplayer
-    sudo pacman -U --needed --noconfirm "$url"
+    sudo pacman -U --needed --noconfirm "$work/${url##*/}"
     done_message
     exit 0
   fi
