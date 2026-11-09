@@ -155,7 +155,7 @@ Menu {
     }
 
     Instantiator {
-        model: actions.list.filter(function (entry) { return entry.group === "help"; })
+        model: actions.list.filter(function (entry) { return entry.group === "help" && entry.id !== "menu"; })
         delegate: MenuEntry {
             required property var modelData
             text: modelData.text

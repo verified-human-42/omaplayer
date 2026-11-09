@@ -82,6 +82,9 @@ ApplicationWindow {
         case "fullscreen":
             toggleFullscreen();
             break;
+        case "menu":
+            openMenu();
+            break;
         case "picture-in-picture":
             if (fullscreen)
                 toggleFullscreen();

@@ -128,6 +128,7 @@ const QList<Actions::Spec> &Actions::specs() {
         {"info", "screen", QT_TRANSLATE_NOOP("Actions", "Playback Info"), {"Tab", "Ctrl+I", "Ctrl+F1"}, {"I"}, K::Window, {}, {}},
         {"picture-in-picture", "screen", QT_TRANSLATE_NOOP("Actions", "Picture in Picture"), {"P"}, {}, K::Window, {}, {}},
 
+        {"menu", "help", QT_TRANSLATE_NOOP("Actions", "Menu"), {"Menu", "Shift+F10"}, {"Menu", "Shift+F10"}, K::Window, {}, {}, false},
         {"settings", "help", QT_TRANSLATE_NOOP("Actions", "Settings…"), {"F5", "Ctrl+,"}, {"Ctrl+,"}, K::Window, {}, {}},
         {"shortcuts", "help", QT_TRANSLATE_NOOP("Actions", "Keyboard Shortcuts"), {"?", "F1", "Ctrl+/"}, {"?", "F1"}, K::Window, {}, {}},
     };
