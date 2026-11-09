@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="220" viewBox="0 0 1000 220" role="img" aria-label="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: Omaplayer.">
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="220" viewBox="0 0 1000 220" role="img" aria-label="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: OmaPlayer.">
   <defs>
     <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0.15" stop-color="#5E81AC"/>
@@ -11,5 +11,5 @@
   </style>
   <text x="500" y="62" font-size="34" font-weight="600" fill="#3B4252">Best player on Windows: PotPlayer.</text>
   <text x="500" y="118" font-size="22" font-style="italic" fill="#B07D2B">Opinion? Yes. Debatable? No.</text>
-  <text x="500" y="182" font-size="38" font-weight="800" fill="url(#ink)">Best player on Omarchy: Omaplayer.</text>
+  <text x="500" y="182" font-size="38" font-weight="800" fill="url(#ink)">Best player on Omarchy: OmaPlayer.</text>
 </svg>

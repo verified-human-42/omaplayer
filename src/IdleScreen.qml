@@ -49,7 +49,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
 
                     Label {
-                        text: "omaplayer"
+                        text: "OmaPlayer"
                         color: idle.ink
                         font.pixelSize: 24
                         font.weight: Font.DemiBold

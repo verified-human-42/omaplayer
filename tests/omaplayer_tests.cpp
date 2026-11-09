@@ -528,8 +528,7 @@ private slots:
         settings.set("playback/exactSeek", true);
         settings.set("video/deinterlace", true);
         settings.set("video/streamQuality", "720");
-        settings.set("audio/stereo", true);
-        settings.set("audio/passthrough", true);
+        settings.set("audio/surround", "receiver");
         settings.set("subtitles/lift", 0.1);
         settings.set("subtitles/background", true);
         settings.set("subtitles/restyle", true);
@@ -538,8 +537,10 @@ private slots:
         expect("hr-seek", "true");
         expect("deinterlace", "auto");
         expect("ytdl-format", "bestvideo[height<=?720]+bestaudio/best[height<=?720]/best");
-        expect("audio-channels", "stereo");
         expect("audio-spdif", "ac3,eac3,dts,dts-hd,truehd");
+        settings.set("audio/surround", "stereo");
+        expect("audio-channels", "stereo");
+        expect("audio-spdif", "");
         expect("sub-pos", "90");
         expect("sub-border-style", "background-box");
         expect("sub-ass-override", "force");
@@ -576,10 +577,20 @@ private slots:
         settings.set("video/smooth", true);
         settings.set("subtitles/second", "en");
         settings.bindKey("stop", "Ctrl+;");
+        QVERIFY(settings.changedKeys().contains("keys/stop"));
         settings.resetAll();
         QCOMPARE(settings.value("video/smooth").toBool(), false);
         QCOMPARE(settings.value("subtitles/second").toString(), QString());
         QCOMPARE(settings.customBindings(), 0);
+        QVERIFY(settings.changedKeys().isEmpty());
+
+        // Undo all brings shortcuts back too.
+        settings.bindKey("stop", "Ctrl+;");
+        settings.beginSession();
+        settings.resetAll();
+        QCOMPARE(settings.changedKeys(), QStringList{"keys/stop"});
+        settings.undoAll();
+        QCOMPARE(actions.keys("stop"), QStringList{"Ctrl+;"});
         QVERIFY(settings.changedKeys().isEmpty());
     }
 
@@ -749,6 +760,93 @@ private slots:
         QTRY_COMPARE(player.get("sub-pos").toInt(), 99);
         actions.trigger("sub-bigger");
         QTRY_VERIFY(qAbs(player.get("sub-scale").toDouble() - 1.1) < 0.001);
+    }
+
+    // Every action in the table runs and reports, in both layouts' terms:
+    // mpv commands say what they changed, the player's own say theirs, and
+    // the window's reach the window.
+    void everyActionRuns()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"), 20);
+        makeClip(dir.filePath("clip2.mkv"));
+        Player player(Player::Output::None);
+        player.setScreenshotOptions(dir.filePath("shots"), true, "png");
+        Actions actions(&player);
+        QVERIFY(loadPaused(player, clip));
+        QTRY_VERIFY(player.playlistCount() == 2);
+        player.seekTo(10, true);
+        QTRY_VERIFY(qAbs(player.position() - 10) < 0.5);
+
+        QSignalSpy osd(&player, &Player::osd);
+        QSignalSpy window(&actions, &Actions::windowAction);
+        const QStringList skipped{"quit", "open-file", "open-clipboard", "stop", "previous-file", "next-file", "play-pause"};
+        for (const auto &spec : Actions::specs()) {
+            if (skipped.contains(spec.id))
+                continue;
+            osd.clear();
+            window.clear();
+            actions.trigger(spec.id);
+            if (spec.kind == Actions::Kind::Window) {
+                QCOMPARE(window.count(), 1);
+                QCOMPARE(window.first().first().toString(), spec.id);
+                continue;
+            }
+            QVERIFY2(QTest::qWaitFor([&] { return !osd.isEmpty(); }, 5000), qPrintable(spec.id + " said nothing"));
+            const QString kind = osd.last().first().toString();
+            QStringList expected{spec.osd};
+            if (spec.id == "repeat") expected = {"repeat"};
+            if (spec.id.startsWith("loop-")) expected = {"ab-loop"};
+            if (spec.id == "screenshot") expected = {"screenshot"};
+            if (spec.id == "copy-frame") expected = {"screenshot-copy"};
+            if (spec.id == "picture-reset") expected = {"picture-reset"};
+            if (spec.osd == "chapter") expected.append("chapter-none");
+            QVERIFY2(expected.contains(kind), qPrintable(QString("%1 said %2").arg(spec.id, kind)));
+        }
+        // Then the ones that leave this file or stop it.
+        for (const auto &id : {"next-file", "previous-file", "play-pause", "stop"}) {
+            osd.clear();
+            actions.trigger(id);
+            if (QString(id) != "stop")
+                QVERIFY2(QTest::qWaitFor([&] { return !osd.isEmpty(); }, 5000), id);
+        }
+        QTRY_VERIFY(player.idle());
+    }
+
+    void anEmptyClipboardLeavesPlaybackAlone()
+    {
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("clip.mkv"));
+        Player player(Player::Output::None);
+        QVERIFY(loadPaused(player, clip));
+        for (const auto &contents : {QString(), QString("just some words"), QString("/no/such/file.mkv")}) {
+            QGuiApplication::clipboard()->setText(contents);
+            QVERIFY(!player.openClipboard());
+        }
+        QGuiApplication::clipboard()->setImage(QImage(8, 8, QImage::Format_RGB32));
+        QVERIFY(!player.openClipboard());
+        player.open({});
+        QTest::qWait(500);
+        QVERIFY(!player.idle());
+        QCOMPARE(player.path(), clip);
+
+        // A folder or a page that isn't a stream: nothing happens, or the
+        // video comes back where it was.
+        QGuiApplication::clipboard()->setText(dir.path());
+        QVERIFY(!player.openClipboard());
+        player.seekTo(1, true);
+        QTRY_VERIFY(qAbs(player.position() - 1) < 0.2);
+        QGuiApplication::clipboard()->setText("http://127.0.0.1:9/nothing-here.mkv");
+        QVERIFY(player.openClipboard());
+        QTRY_VERIFY_WITH_TIMEOUT(!player.error().isEmpty(), 20000);
+        QTRY_COMPARE_WITH_TIMEOUT(player.path(), clip, 10000);
+        QTRY_VERIFY_WITH_TIMEOUT(!player.idle() && qAbs(player.position() - 1) < 0.5, 10000);
+
+        // A real path does open.
+        const QString other = makeClip(dir.filePath("other.mkv"));
+        QGuiApplication::clipboard()->setText(other);
+        QVERIFY(player.openClipboard());
+        QTRY_COMPARE_WITH_TIMEOUT(player.path(), other, 10000);
     }
 
     void theLastFileEndingIsReported()

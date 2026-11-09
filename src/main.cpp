@@ -56,14 +56,15 @@ int main(int argc, char *argv[]) {
     QStringList items = app.arguments().mid(1);
     items.removeIf([](const QString &item) { return item.startsWith('-') && item != "-"; });
 
-    // Files opened while a window is up play in that window, the way Windows
-    // players behave, unless Settings › Playback says otherwise. Asking takes
+    // Files opened while a window is up replace what it plays, the way
+    // Windows players behave, unless Settings › Playback asks for a new
+    // window each time. Asking takes
     // a moment only when one is running; otherwise this one takes the calls.
     const QString server = QString("omaplayer-%1").arg(getuid());
     QLocalSocket running;
     running.connectToServer(server);
     const bool another = running.waitForConnected(250);
-    if (another && !items.isEmpty() && QSettings().value("playback/oneWindow", true).toBool()) {
+    if (another && !items.isEmpty() && QSettings().value("playback/openIn", "replace").toString() != "window") {
         QStringList absolute;
         for (const auto &item : items)
             absolute.append(item.contains("://") || item == "-" ? item : QDir::current().absoluteFilePath(item));

@@ -41,6 +41,19 @@ Popup {
         return Qt.rgba(ink.r, ink.g, ink.b, alpha);
     }
 
+    // A key for an action in the layout in effect, for descriptions that
+    // name keys, or "" when the layout gives it none.
+    function keyFor(id) {
+        actions.list;
+        return actions.shortcut(id);
+    }
+
+    function seekKeys(back, forward) {
+        var a = keyFor(back), b = keyFor(forward);
+        return a !== "" && b !== "" ? qsTr("%1 and %2.").arg(a).arg(b)
+                                    : qsTr("No key in this layout. Give it one on the Keyboard page.");
+    }
+
     readonly property var pages: {
         actions.list; // re-read after a language or keymap change
         return [
@@ -50,39 +63,37 @@ Popup {
                     {
                         title: qsTr("Files"), note: qsTr("What happens when a file opens and when it ends."),
                         rows: [
+                            settings.defaultPlayer
+                                ? { type: "fact", label: qsTr("Default player"), value: qsTr("OmaPlayer is the default"),
+                                    description: qsTr("Videos and music open here from the file manager.") }
+                                : { key: "action:default-player", type: "action", command: "makeDefaultPlayer",
+                                    button: qsTr("Make default"), label: qsTr("Default player"),
+                                    description: settings.defaultPlayerError !== "" ? settings.defaultPlayerError
+                                               : qsTr("Open videos and music in OmaPlayer from the file manager.") },
+                            { key: "playback/openIn", type: "choice", label: qsTr("When another video is opened"),
+                              description: qsTr("From the file manager or a terminal, while OmaPlayer is already playing."),
+                              options: [{ value: "replace", label: qsTr("Replace this one") }, { value: "window", label: qsTr("New window") }] },
                             { key: "playback/resume", type: "switch", label: qsTr("Resume where you left off"),
                               description: qsTr("A file reopens at the moment you stopped watching it.") },
                             { key: "playback/folderPlaylist", type: "switch", label: qsTr("Play the whole folder"),
                               description: qsTr("Opening one file queues the videos and music beside it.") },
-                            { key: "playback/oneWindow", type: "switch", label: qsTr("One window"),
-                              description: qsTr("Files opened from the file manager play in the window that's already open.") },
                             { key: "playback/atEnd", type: "choice", label: qsTr("When the last file ends"),
-                              description: qsTr("Repeat in the playlist or the menu keeps it going instead."),
+                              description: qsTr("With Repeat on, from the playlist or the right-click menu, it loops instead."),
                               options: [{ value: "hold", label: qsTr("Hold the frame") }, { value: "clear", label: qsTr("Start screen") },
-                                        { value: "quit", label: qsTr("Close") }] },
+                                        { value: "quit", label: qsTr("Quit") }] },
                         ]
                     },
                     {
-                        title: qsTr("Seeking"), note: qsTr("How far the arrow keys jump."),
+                        title: qsTr("Seeking"), note: qsTr("How far each seek jumps."),
                         rows: [
-                            { key: "playback/seekStep", type: "choice", label: qsTr("Arrow keys"),
-                              description: qsTr("Left and Right."),
+                            { key: "playback/seekStep", type: "choice", label: qsTr("Short seek"),
+                              description: seekKeys("seek-back", "seek-forward"),
                               options: ["1", "3", "5", "10"].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
-                            { key: "playback/seekLongStep", type: "choice", label: qsTr("With Ctrl"),
-                              description: qsTr("Ctrl+Left and Ctrl+Right."),
+                            { key: "playback/seekLongStep", type: "choice", label: qsTr("Long seek"),
+                              description: seekKeys("seek-back-long", "seek-forward-long"),
                               options: ["10", "30", "60"].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
                             { key: "playback/exactSeek", type: "switch", label: qsTr("Exact seeking"),
                               description: qsTr("Lands on the exact frame instead of the nearest keyframe. A little slower.") },
-                        ]
-                    },
-                    {
-                        title: qsTr("Mouse"), note: qsTr("On the picture itself."),
-                        rows: [
-                            { key: "playback/clickPause", type: "switch", label: qsTr("Click to pause"),
-                              description: qsTr("A single click plays or pauses. A double-click is always fullscreen.") },
-                            { key: "playback/wheel", type: "choice", label: qsTr("Mouse wheel"),
-                              description: qsTr("What scrolling over the picture changes."),
-                              options: [{ value: "volume", label: qsTr("Volume") }, { value: "seek", label: qsTr("Seek") }] },
                         ]
                     },
                 ]
@@ -91,15 +102,10 @@ Popup {
                 id: "video", section: qsTr("Player"), title: qsTr("Video"), icon: "video",
                 groups: [
                     {
-                        title: qsTr("Decoding"), note: qsTr("How frames are made."),
+                        title: qsTr("Picture"), note: qsTr("How frames are made and drawn."),
                         rows: [
                             { key: "video/hwdec", type: "switch", label: qsTr("Hardware decoding"),
                               description: qsTr("Decode on the graphics card when it can. Cooler, quieter, and longer on battery.") },
-                        ]
-                    },
-                    {
-                        title: qsTr("Picture"), note: qsTr("How frames are drawn."),
-                        rows: [
                             { key: "video/smooth", type: "switch", label: qsTr("Smooth motion"),
                               description: qsTr("Matches the display's refresh rate and blends frames, so film doesn't judder.") },
                             { key: "video/scale", type: "choice", label: qsTr("Upscaling"),
@@ -110,21 +116,22 @@ Popup {
                               description: qsTr("Smooths the color steps that show in dark, compressed scenes.") },
                             { key: "video/deinterlace", type: "switch", label: qsTr("Deinterlace"),
                               description: qsTr("Removes the comb lines from TV recordings and DVDs. Other video is left alone.") },
-                            { key: "video/keepAwake", type: "switch", label: qsTr("Keep the screen awake"),
-                              description: qsTr("The screen doesn't dim or turn off while a video plays.") },
                         ]
                     },
                     {
                         title: qsTr("Streams"), note: qsTr("Videos opened from YouTube and other sites."),
                         rows: [
                             { key: "video/streamQuality", type: "choice", label: qsTr("Quality"),
-                              description: qsTr("The highest resolution fetched. Lower saves data on slow connections."),
+                              description: qsTr("The highest resolution fetched. Above 1080p, older graphics cards may stutter."),
                               options: [{ value: "best", label: qsTr("Best") }].concat(["2160", "1440", "1080", "720", "480"].map(function (n) {
                                   return { value: n, label: n + "p" }; })) },
                         ]
                     },
                     {
-                        title: qsTr("Screenshots"), note: qsTr("Ctrl+E saves the frame on screen, Ctrl+C copies it."),
+                        title: qsTr("Screenshots"),
+                        note: keyFor("screenshot") !== "" && keyFor("copy-frame") !== ""
+                              ? qsTr("%1 saves the frame on screen, %2 copies it.").arg(keyFor("screenshot")).arg(keyFor("copy-frame"))
+                              : qsTr("Save or copy the frame on screen from the right-click menu."),
                         rows: [
                             { key: "video/screenshotFormat", type: "choice", label: qsTr("Format"),
                               description: qsTr("PNG keeps every pixel; JPEG and WebP are smaller."),
@@ -132,7 +139,7 @@ Popup {
                             { key: "video/screenshotSubtitles", type: "switch", label: qsTr("Include subtitles"),
                               description: qsTr("The frame as you see it, subtitles and all.") },
                             { key: "video/screenshotFolder", type: "text", label: qsTr("Folder"),
-                              description: qsTr("Empty saves where Omarchy's screenshots go."),
+                              description: qsTr("Empty saves where Omarchy's screenshots go. A missing folder is made."),
                               placeholder: settings.defaultScreenshotFolder() },
                         ]
                     },
@@ -157,17 +164,20 @@ Popup {
                         rows: [
                             { key: "audio/device", type: "menu", label: qsTr("Output device"),
                               description: qsTr("System default follows the output picked in Omarchy."), options: audioDevices() },
-                            { key: "audio/stereo", type: "switch", label: qsTr("Stereo downmix"),
-                              description: qsTr("Folds surround sound into two channels, so dialogue stays clear on headphones and laptop speakers.") },
-                            { key: "audio/passthrough", type: "switch", label: qsTr("Passthrough to a receiver"),
-                              description: qsTr("Sends Dolby and DTS untouched over HDMI or S/PDIF for an AV receiver to decode. Silent without one.") },
+                            { key: "audio/surround", type: "choice", label: qsTr("Surround sound"),
+                              description: settings.values["audio/surround"] === "receiver"
+                                           ? qsTr("Dolby and DTS go untouched over HDMI or S/PDIF to an AV receiver. Without one, they're silent.")
+                                           : qsTr("Stereo folds surround into two channels, so dialogue stays clear on headphones and laptops."),
+                              options: [{ value: "auto", label: qsTr("Auto") }, { value: "stereo", label: qsTr("Stereo") },
+                                        { value: "receiver", label: qsTr("Receiver") }] },
                         ]
                     },
                     {
                         title: qsTr("Tracks"), note: qsTr("Which audio track plays first."),
                         rows: [
                             { key: "audio/language", type: "text", label: qsTr("Preferred languages"),
-                              description: qsTr("Language codes in order, separated by commas."), placeholder: "en,ja" },
+                              description: qsTr("Language codes like en or ja, in order, separated by commas."),
+                              placeholder: qsTr("The file's default") },
                         ]
                     },
                 ]
@@ -183,24 +193,17 @@ Popup {
                               options: [{ value: "fuzzy", label: qsTr("Similar name") }, { value: "exact", label: qsTr("Same name") },
                                         { value: "no", label: qsTr("Off") }] },
                             { key: "subtitles/language", type: "text", label: qsTr("Preferred languages"),
-                              description: qsTr("Language codes in order, separated by commas. Empty follows Omarchy's language."),
-                              placeholder: settingsLanguageHint },
+                              description: qsTr("Language codes like ko or en, in order, separated by commas."),
+                              placeholder: qsTr("Omarchy's language (%1)").arg(settingsLanguageHint) },
                             { key: "subtitles/second", type: "text", label: qsTr("Second subtitle"),
-                              description: qsTr("A language code to show a second subtitle at the top, for watching in two languages. Empty for none."),
-                              placeholder: "en" },
-                        ]
-                    },
-                    {
-                        title: qsTr("Text encoding"),
-                        note: qsTr("Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish."),
-                        rows: [
-                            { key: "radio:encoding:auto", type: "radio", setting: "subtitles/encoding", value: "auto",
-                              label: qsTr("Auto"), description: qsTr("Default. Reads each file and works out its encoding.") },
-                            { key: "radio:encoding:utf-8", type: "radio", setting: "subtitles/encoding", value: "utf-8", label: "UTF-8", description: "Unicode" },
-                            { key: "radio:encoding:korean", type: "radio", setting: "subtitles/encoding", value: "korean", label: "한국어", description: qsTr("Korean") + " · CP949" },
-                            { key: "radio:encoding:japanese", type: "radio", setting: "subtitles/encoding", value: "japanese", label: "日本語", description: qsTr("Japanese") + " · Shift-JIS" },
-                            { key: "radio:encoding:chinese-simplified", type: "radio", setting: "subtitles/encoding", value: "chinese-simplified", label: "简体中文", description: qsTr("Chinese (Simplified)") + " · GB18030" },
-                            { key: "radio:encoding:chinese-traditional", type: "radio", setting: "subtitles/encoding", value: "chinese-traditional", label: "繁體中文", description: qsTr("Chinese (Traditional)") + " · Big5" },
+                              description: qsTr("A language code, like en, for a second subtitle at the top. For watching in two languages."),
+                              placeholder: qsTr("Off") },
+                            { key: "subtitles/encoding", type: "menu", label: qsTr("Text encoding"),
+                              description: qsTr("Auto works out each file's encoding. Pick one only if a file still comes out as gibberish."),
+                              options: [{ value: "auto", label: qsTr("Auto (default)") }, { value: "utf-8", label: "UTF-8" },
+                                        { value: "korean", label: "한국어 · CP949" }, { value: "japanese", label: "日本語 · Shift-JIS" },
+                                        { value: "chinese-simplified", label: "简体中文 · GB18030" },
+                                        { value: "chinese-traditional", label: "繁體中文 · Big5" }] },
                         ]
                     },
                     {
@@ -210,9 +213,10 @@ Popup {
                               description: qsTr("Relative to the subtitles' own size."), minimum: 0.5, maximum: 2, step: 0.05 },
                             { key: "subtitles/lift", type: "level", label: qsTr("Height"),
                               description: qsTr("How far above the bottom of the picture they sit."), minimum: 0, maximum: 0.3, step: 0.02 },
-                            { key: "subtitles/font", type: "text", label: qsTr("Font"),
-                              description: qsTr("A font family installed on this computer. Empty uses the system's."),
-                              placeholder: "sans-serif" },
+                            { key: "subtitles/font", type: "menu", label: qsTr("Font"),
+                              description: qsTr("Any font installed on this computer."),
+                              options: [{ value: "", label: qsTr("System default") }].concat(Qt.fontFamilies().map(function (family) {
+                                  return { value: family, label: family }; })) },
                             { key: "subtitles/background", type: "switch", label: qsTr("Box behind the text"),
                               description: qsTr("A dark box instead of an outline, for subtitles over bright scenes.") },
                             { key: "subtitles/restyle", type: "switch", label: qsTr("Restyle styled subtitles"),
@@ -225,18 +229,40 @@ Popup {
                 id: "controls", section: qsTr("Interface"), title: qsTr("Controls"), icon: "controls",
                 groups: [
                     {
-                        title: qsTr("Bar"), note: qsTr("The controls under the picture."),
+                        title: qsTr("Bar"), note: qsTr("The seek bar and buttons."),
                         rows: [
-                            { key: "interface/controls", type: "choice", label: qsTr("In a window"),
-                              description: qsTr("Fullscreen always floats the bar over the picture."),
-                              options: [{ value: "docked", label: qsTr("Under the picture") }, { value: "floating", label: qsTr("Over it") }] },
+                            { key: "interface/controls", type: "choice", label: qsTr("Bar in a window"),
+                              description: qsTr("Fullscreen always floats it over the picture."),
+                              options: [{ value: "docked", label: qsTr("Below the picture") }, { value: "floating", label: qsTr("Over the picture") }] },
                             { key: "interface/hideDelay", type: "choice", label: qsTr("Hide after"),
                               description: qsTr("How long a still pointer waits before the controls step aside."),
                               options: [1, 2, 3, 5].map(function (n) { return { value: n, label: qsTr("%1 s").arg(n) }; }) },
-                            { key: "interface/remaining", type: "switch", label: qsTr("Count down"),
-                              description: qsTr("The clock shows the time left. Clicking the clock switches it too.") },
+                            { key: "interface/remaining", type: "switch", label: qsTr("Show time left"),
+                              description: qsTr("The clock counts down. Clicking the clock switches it too.") },
+                        ]
+                    },
+                    {
+                        title: qsTr("Window"), note: qsTr("OmaPlayer on the desktop."),
+                        rows: [
                             { key: "interface/startFullscreen", type: "switch", label: qsTr("Start in fullscreen"),
                               description: qsTr("Opening a file fills the screen. Esc goes back to the window.") },
+                            { key: "video/keepAwake", type: "switch", label: qsTr("Keep the screen awake"),
+                              description: qsTr("The screen doesn't dim or turn off while a video plays.") },
+                        ]
+                    },
+                    {
+                        title: qsTr("Mouse"), note: qsTr("On the picture itself."),
+                        rows: [
+                            { key: "playback/clickPause", type: "switch", label: qsTr("Click to pause"),
+                              description: qsTr("A single click plays or pauses. A double-click is always fullscreen.") },
+                            { key: "playback/wheel", type: "choice", label: qsTr("Mouse wheel"),
+                              description: qsTr("What scrolling over the picture changes."),
+                              options: [{ value: "volume", label: qsTr("Volume") }, { value: "seek", label: qsTr("Seek") }] },
+                        ]
+                    },
+                    {
+                        title: qsTr("Messages"), note: qsTr("Text on the picture."),
+                        rows: [
                             { key: "interface/osd", type: "switch", label: qsTr("Corner messages"),
                               description: qsTr("The file name, volume, seeking, and every other change, in the top-left corner.") },
                         ]
@@ -250,21 +276,24 @@ Popup {
                         title: qsTr("Layout"), note: qsTr("Every shortcut in the app follows the layout."),
                         rows: [
                             { key: "interface/keymap", type: "choice", label: qsTr("Shortcuts"),
-                              description: qsTr("Omaplayer's own keys, or mpv's for those coming from it."),
-                              options: [{ value: "omaplayer", label: "Omaplayer" }, { value: "mpv", label: "mpv" }] },
+                              description: qsTr("OmaPlayer's own keys, or mpv's for those coming from it."),
+                              options: [{ value: "omaplayer", label: "OmaPlayer" }, { value: "mpv", label: "mpv" }] },
+                            { key: "action:reset-keys", type: "action", command: "resetAllKeys", button: qsTr("Reset all"),
+                              label: qsTr("Your shortcuts"),
+                              description: qsTr("%n shortcuts changed from the layout.", "", settings.customBindings) },
                         ]
                     },
-                    {
-                        title: qsTr("Keys"), note: qsTr("Click + or press Enter, then the new key. Backspace removes the last one."),
-                        rows: [{ key: "action:reset-keys", type: "action", command: "resetAllKeys", button: qsTr("Reset all"),
-                                 label: qsTr("Your shortcuts"),
-                                 description: qsTr("%n shortcuts changed from the layout.", "", settings.customBindings) }]
-                              .concat(actions.list.map(function (entry) {
-                                  return { key: "binding:" + entry.id, type: "binding", actionId: entry.id, label: entry.text,
-                                           keys: entry.keys, labels: entry.keyLabels, custom: entry.custom };
-                              }))
-                    },
-                ]
+                ].concat(actions.groups.map(function (group, index) {
+                    // One card per group, as in the right-click menu.
+                    return {
+                        title: group.text,
+                        note: index === 0 ? qsTr("Click + or press Enter, then the new key. Backspace removes the last one.") : "",
+                        rows: actions.list.filter(function (entry) { return entry.group === group.id; }).map(function (entry) {
+                            return { key: "binding:" + entry.id, type: "binding", actionId: entry.id, label: entry.text,
+                                     keys: entry.keys, labels: entry.keyLabels, custom: entry.custom };
+                        })
+                    };
+                }))
             },
             {
                 // In English too, so anyone can find their way back from a
@@ -273,11 +302,11 @@ Popup {
                 title: qsTr("Language") === "Language" ? "Language" : qsTr("Language") + " / Language", icon: "language",
                 groups: [
                     {
-                        title: qsTr("Language"), note: qsTr("The language of menus, messages, and settings."),
+                        title: qsTr("Interface language"), note: qsTr("The language of menus, messages, and settings."),
                         rows: [
                             { key: "radio:language:omarchy", type: "radio", setting: "interface/language", value: "omarchy",
-                              label: qsTr("Follow Omarchy"), description: qsTr("Whatever Omarchy is set to, switching along with it.") },
-                            { key: "radio:language:en", type: "radio", setting: "interface/language", value: "en", label: "English", description: "English" },
+                              label: qsTr("Follow Omarchy"), description: qsTr("Switches along with Omarchy's language.") },
+                            { key: "radio:language:en", type: "radio", setting: "interface/language", value: "en", label: "English" },
                             { key: "radio:language:ko", type: "radio", setting: "interface/language", value: "ko", label: "한국어", description: "Korean" },
                             { key: "radio:language:ja", type: "radio", setting: "interface/language", value: "ja", label: "日本語", description: "Japanese" },
                             { key: "radio:language:zh-CN", type: "radio", setting: "interface/language", value: "zh-CN", label: "简体中文", description: "Chinese (Simplified)" },
@@ -287,10 +316,10 @@ Popup {
                 ]
             },
             {
-                id: "about", section: qsTr("Omaplayer"), title: qsTr("About"), icon: "info",
+                id: "about", section: qsTr("OmaPlayer"), title: qsTr("About"), icon: "info",
                 groups: [
                     {
-                        title: "Omaplayer", note: qsTr("A media player for Omarchy, built on mpv."),
+                        title: "OmaPlayer", note: qsTr("A media player for Omarchy, built on mpv."),
                         rows: [
                             { type: "fact", label: qsTr("Version"), value: Qt.application.version,
                               url: "https://github.com/verified-human-42/omaplayer/releases" },
@@ -308,16 +337,11 @@ Popup {
                         ]
                     },
                     {
-                        title: qsTr("System"), note: qsTr("Omaplayer and the rest of the desktop."),
+                        title: qsTr("Start over"), note: "",
                         rows: [
-                            { key: "action:default-player", type: "action", command: "makeDefaultPlayer",
-                              button: settings.defaultPlayer ? qsTr("Done") : qsTr("Make default"),
-                              label: qsTr("Default player"),
-                              description: settings.defaultPlayer ? qsTr("Videos and music open in Omaplayer.")
-                                                                  : qsTr("Open videos and music in Omaplayer from the file manager and browser.") },
                             { key: "action:reset-all", type: "action", command: "resetAll", button: qsTr("Reset"),
                               label: qsTr("Reset all settings"),
-                              description: qsTr("Every setting and shortcut back to how it came. Undo works until you close this page.") },
+                              description: qsTr("Every setting and shortcut back to how it came. Undo all takes it back until you close this page.") },
                         ]
                     },
                 ]
@@ -325,22 +349,24 @@ Popup {
         ];
     }
 
-    // Rows matching the search, from every page, grouped under their page.
+    // Rows matching every word of the search, from every page, under
+    // "Page › Group" so labels like "Folder" keep their context.
     readonly property var groups: {
         if (query.trim() === "")
             return pages[pageIndex].groups;
-        var needle = query.trim().toLowerCase(), found = [];
-        for (var p = 0; p < pages.length; ++p) {
-            var rows = [];
-            for (var g = 0; g < pages[p].groups.length; ++g)
-                pages[p].groups[g].rows.forEach(function (row) {
-                    var haystack = [row.label, row.description || "", pages[p].title, pages[p].groups[g].title].join(" ").toLowerCase();
-                    if (haystack.indexOf(needle) >= 0)
-                        rows.push(row);
+        var words = query.trim().toLowerCase().split(/\s+/), found = [];
+        for (var p = 0; p < pages.length; ++p)
+            for (var g = 0; g < pages[p].groups.length; ++g) {
+                var group = pages[p].groups[g];
+                var rows = group.rows.filter(function (row) {
+                    var haystack = [row.label, row.description || "", row.value || "", pages[p].title, group.title]
+                        .concat((row.options || []).map(function (option) { return option.label; }))
+                        .concat(row.labels || []).join(" ").toLowerCase();
+                    return words.every(function (word) { return haystack.indexOf(word) >= 0; });
                 });
-            if (rows.length > 0)
-                found.push({ title: pages[p].title, note: "", rows: rows });
-        }
+                if (rows.length > 0)
+                    found.push({ title: pages[p].title + " › " + group.title, note: "", rows: rows });
+            }
         return found;
     }
 
@@ -389,7 +415,10 @@ Popup {
             scroller.contentY = Math.min(scroller.contentHeight - scroller.height, top + item.height - scroller.height + 12);
     }
 
+    property double lastKeyAt: 0
+
     function handleKey(event) {
+        lastKeyAt = Date.now();
         // A binding that's listening takes the next key, whatever it is.
         if (capturing !== "") {
             event.accepted = true;
@@ -432,6 +461,24 @@ Popup {
             break;
         case Qt.Key_Slash:
             searchInput.forceActiveFocus();
+            break;
+        case Qt.Key_Tab:
+            moveRow(1);
+            break;
+        case Qt.Key_Backtab:
+            moveRow(-1);
+            break;
+        case Qt.Key_Home:
+            rowIndex = stops.length > 0 ? 0 : -1;
+            break;
+        case Qt.Key_End:
+            rowIndex = stops.length - 1;
+            break;
+        case Qt.Key_PageUp:
+            moveRow(-8);
+            break;
+        case Qt.Key_PageDown:
+            moveRow(8);
             break;
         case Qt.Key_Up:
         case Qt.Key_K:
@@ -549,7 +596,7 @@ Popup {
                 spacing: 8
 
                 Label {
-                    text: "Omaplayer"
+                    text: "OmaPlayer"
                     color: page.ink
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
@@ -732,7 +779,7 @@ Popup {
                                 font.pixelSize: 10
                                 font.weight: Font.DemiBold
                                 font.capitalization: Font.AllUppercase
-                                font.letterSpacing: 1.4
+                                font.letterSpacing: /^(ko|ja|zh)/.test(translator.language) ? 0 : 1.4 // Hangul and kanji read wrong spread
                             }
                         }
 
@@ -903,7 +950,11 @@ Popup {
                                                      && (rowHolder.modelData.key || "") !== ""
                                                      && page.stops[page.rowIndex].key === rowHolder.modelData.key
                                             onCurrentChanged: if (current) page.reveal(settingRow)
-                                            onPointed: page.rowIndex = page.stopIndex(rowHolder.modelData.key)
+                                            // Rows passing under a still pointer while the
+                                            // keyboard scrolls don't take the cursor.
+                                            onPointed: if (Date.now() - page.lastKeyAt > 500)
+                                                           page.rowIndex = page.stopIndex(rowHolder.modelData.key)
+                                            onEditingDone: body.forceActiveFocus()
 
                                             Connections {
                                                 target: page

@@ -12,7 +12,7 @@ ApplicationWindow {
     minimumWidth: 520
     minimumHeight: 320
     visible: true
-    title: player.idle || player.title === "" ? "Omaplayer" : player.title + " — Omaplayer"
+    title: player.idle || player.title === "" ? "OmaPlayer" : player.title + " — OmaPlayer"
 
     // The clear color. mpv draws the picture over it, under everything else.
     color: "black"

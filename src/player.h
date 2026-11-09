@@ -200,6 +200,10 @@ private:
     bool m_screenshotSubtitles = true;
     QString m_screenshotFormat = "png";
     QString m_lastScreenshot;
+    // What to go back to when something opened from the clipboard won't play.
+    QString m_fallbackPath;
+    double m_fallbackPosition = 0;
+    bool m_restoring = false;
     QSize m_videoSize;
     QVariantList m_tracks;
     QString m_error;

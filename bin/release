@@ -23,9 +23,9 @@ sed -i "s/^sha256sums=.*/sha256sums=('SKIP')/" packaging/omaplayer/PKGBUILD
 "$ROOT/bin/test"
 
 git commit -qam "Release v$VERSION" || true
-git tag -a "v$VERSION" -m "Omaplayer $VERSION"
+git tag -a "v$VERSION" -m "OmaPlayer $VERSION"
 git push -q origin main "v$VERSION"
-gh release create "v$VERSION" --title "Omaplayer $VERSION" --generate-notes
+gh release create "v$VERSION" --title "OmaPlayer $VERSION" --generate-notes
 
 # The tarball GitHub serves for the tag, checksummed for the package.
 REPO=$(gh repo view --json url -q .url)

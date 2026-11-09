@@ -14,7 +14,7 @@ const char *groupText(const QString &group) {
     if (group == "subtitles") return QT_TRANSLATE_NOOP("Actions", "Subtitles");
     if (group == "video") return QT_TRANSLATE_NOOP("Actions", "Video");
     if (group == "screen") return QT_TRANSLATE_NOOP("Actions", "Screen");
-    return QT_TRANSLATE_NOOP("Actions", "Omaplayer");
+    return QT_TRANSLATE_NOOP("Actions", "OmaPlayer");
 }
 
 QString translated(const char *text) {
@@ -39,7 +39,7 @@ QString Actions::keyLabel(const QString &key) {
 
 Actions::Actions(Player *player, QObject *parent) : QObject(parent), m_player(player) {}
 
-// The first key column is Omaplayer's own layout: the keys Windows media
+// The first key column is OmaPlayer's own layout: the keys Windows media
 // player veterans already have in their fingers, plus the ones every Linux
 // app answers to (Ctrl+, Ctrl+Q, F11, Ctrl+L). The second follows mpv's
 // default input.conf, for people coming from plain mpv.

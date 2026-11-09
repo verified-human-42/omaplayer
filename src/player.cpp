@@ -264,7 +264,11 @@ void Player::handleEvent(const mpv_event &event) {
     case MPV_EVENT_FILE_LOADED:
         qCInfo(lcTiming, "file loaded at %lld", QDateTime::currentMSecsSinceEpoch());
         setOpening(false);
-        clearError();
+        // Back on the file that was playing, the error stays up to say why.
+        if (!m_restoring)
+            clearError();
+        m_restoring = false;
+        m_fallbackPath.clear();
         loadSubtitles();
         // Read now: the corner shows them, and their change notices can
         // arrive after this event.
@@ -289,6 +293,13 @@ void Player::handleEvent(const mpv_event &event) {
             }
             reportError(tr("Couldn't play %1: %2").arg(name, reason));
             setOpening(false);
+            if (!m_fallbackPath.isEmpty()) {
+                const QByteArray back = m_fallbackPath.toUtf8();
+                const QByteArray start = "start=" + QByteArray::number(m_fallbackPosition, 'f', 3);
+                m_fallbackPath.clear();
+                m_restoring = true;
+                sendCommand({"loadfile", back, "replace", "-1", start});
+            }
         } else if (end->reason == MPV_END_FILE_REASON_EOF && !m_path.isEmpty()) {
             // Watched to the end, so next time it starts from the top.
             sendCommand({"delete-watch-later-config", m_path.toUtf8()});
@@ -436,7 +447,8 @@ void Player::open(const QVariantList &items) {
         addSubtitles(subtitles);
         return;
     }
-    openPaths(media);
+    if (!media.isEmpty())
+        openPaths(media);
 }
 
 void Player::loadSubtitles() {
@@ -593,19 +605,33 @@ void Player::setVideoReady() {
 }
 
 bool Player::openClipboard() {
+    // Only what can play: files (not folders), and URLs with a scheme mpv
+    // streams from. A copied sentence or web address of nothing in
+    // particular isn't a reason to stop what's playing.
+    static const QStringList schemes{"http", "https", "file", "rtmp", "rtmps", "rtsp", "rtp", "udp", "ftp", "sftp", "smb", "ytdl"};
     const QStringList lines = QGuiApplication::clipboard()->text().split('\n', Qt::SkipEmptyParts);
     QStringList items;
     for (const auto &line : lines) {
         const QString text = line.trimmed();
-        if (text.contains("://") || QFileInfo::exists(text))
+        const QUrl url(text);
+        const bool stream = url.isValid() && schemes.contains(url.scheme().toLower()) && !url.host().isEmpty();
+        if (text.contains("://") ? stream || url.isLocalFile() : QFileInfo(text).isFile())
             items.append(text);
+    }
+    // Nothing to open (empty, plain text, an image) leaves playback alone.
+    if (items.isEmpty())
+        return false;
+    // And if what's there won't play after all, what was playing comes back.
+    if (!m_idle && !m_path.isEmpty()) {
+        m_fallbackPath = m_path;
+        m_fallbackPosition = m_position;
     }
     // Through open(), so a subtitle path joins what's playing.
     QVariantList list;
     for (const auto &item : items)
         list.append(item);
     open(list);
-    return !items.isEmpty();
+    return true;
 }
 
 void Player::command(const QVariantList &args, const QString &osd) {
@@ -744,8 +770,12 @@ void Player::setLoopPoint(const QString &which) {
             set("ab-loop-b", "no");
         command({"set", "ab-loop-a", now}, "ab-loop");
     } else {
-        if (hasA && a.toDouble() >= now)
+        // An end at or before the start can't be; the message shows the
+        // loop as it stands instead of nothing happening.
+        if (hasA && a.toDouble() >= now) {
+            emit osd("ab-loop");
             return;
+        }
         if (!hasA)
             set("ab-loop-a", 0.0);
         command({"set", "ab-loop-b", now}, "ab-loop");

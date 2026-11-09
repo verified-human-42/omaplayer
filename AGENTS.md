@@ -1,4 +1,4 @@
-# Omaplayer
+# OmaPlayer
 
 An Omarchy-native media player: C++ and Qt Quick around libmpv, built with
 qmake6 into one binary, following the Omarchy theme and language live, and
@@ -84,7 +84,7 @@ pkgbuild/                PKGBUILD, .desktop, icon
   hook loads 1.5 s after launch, or at once when a URL is opened.
 - **One window.** The first instance listens on a local socket
   (`omaplayer-<uid>`); later launches with files hand them over and exit,
-  unless Settings › Playback › One window is off.
+  unless Settings › Playback says to open a new window each time.
 - **Screen awake.** While a video plays, `main.cpp` tags the window `noidle`
   through hyprctl, which Omarchy's Hyprland rules turn into an idle inhibitor.
   libmpv leaves this to the app, and D-Bus inhibits may be ignored by hypridle.

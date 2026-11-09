@@ -25,7 +25,7 @@ Popup {
     }
 
     background: TitledBox {
-        title: qsTr("Shortcuts · %1").arg(actions.keymap === "mpv" ? qsTr("mpv layout") : qsTr("Omaplayer layout"))
+        title: qsTr("Shortcuts · %1").arg(actions.keymap === "mpv" ? qsTr("mpv layout") : qsTr("OmaPlayer layout"))
         stage: false
     }
 

@@ -10,6 +10,8 @@ Rectangle {
     readonly property color ink: theme.foreground
 
     signal committed(string next)
+    // Enter, Esc, or Tab: the keyboard goes back to the page.
+    signal done()
 
     function forceActiveFocus() {
         input.forceActiveFocus();
@@ -35,11 +37,19 @@ Rectangle {
         clip: true
         text: field.value
         onEditingFinished: if (text !== field.value) field.committed(text)
+        Keys.onReturnPressed: (event) => { field.committed(text); field.done(); }
+        Keys.onEnterPressed: (event) => { field.committed(text); field.done(); }
+        Keys.onTabPressed: (event) => { field.committed(text); field.done(); }
         Keys.onEscapePressed: (event) => {
             text = field.value;
-            focus = false;
             event.accepted = true;
+            field.done();
         }
+        // Arrows stay in the field rather than moving through the page.
+        Keys.onUpPressed: (event) => event.accepted = true
+        Keys.onDownPressed: (event) => event.accepted = true
+        Keys.onLeftPressed: (event) => { cursorPosition = Math.max(0, cursorPosition - 1); event.accepted = true; }
+        Keys.onRightPressed: (event) => { cursorPosition = Math.min(text.length, cursorPosition + 1); event.accepted = true; }
 
         Connections {
             target: field

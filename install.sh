@@ -1,5 +1,5 @@
 #!/bin/bash
-# Installs Omaplayer on Omarchy (or any Arch system) as a regular pacman
+# Installs OmaPlayer on Omarchy (or any Arch system) as a regular pacman
 # package. It takes the prebuilt package from the latest release, so there's
 # nothing to compile:
 #
@@ -24,7 +24,7 @@ if [[ $EUID -eq 0 ]]; then
   exit 1
 fi
 if ! command -v pacman >/dev/null; then
-  echo "Omaplayer installs as a pacman package, on Omarchy or Arch." >&2
+  echo "OmaPlayer installs as a pacman package, on Omarchy or Arch." >&2
   exit 1
 fi
 
@@ -39,7 +39,7 @@ make_way_for() {
 
 done_message() {
   echo
-  echo "Omaplayer is installed. Find it in the app launcher (Super + Space), or run: omaplayer"
+  echo "OmaPlayer is installed. Find it in the app launcher (Super + Space), or run: omaplayer"
 }
 
 # The prebuilt package attached to the latest release. pacman pulls in mpv,

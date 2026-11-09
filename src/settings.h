@@ -19,8 +19,9 @@ class Settings : public QObject {
     Q_PROPERTY(QVariantMap values READ values NOTIFY changed)
     Q_PROPERTY(QStringList changedKeys READ changedKeys NOTIFY changed)
     Q_PROPERTY(int customBindings READ customBindings NOTIFY changed)
-    // Whether videos open in Omaplayer from the file manager and browser.
+    // Whether videos open in OmaPlayer from the file manager and browser.
     Q_PROPERTY(bool defaultPlayer READ defaultPlayer NOTIFY defaultPlayerChanged)
+    Q_PROPERTY(QString defaultPlayerError READ defaultPlayerError NOTIFY defaultPlayerChanged)
 
 public:
     struct Spec {
@@ -67,6 +68,7 @@ public:
     Q_INVOKABLE static QString defaultScreenshotFolder();
     static QStringList mediaTypes();
     bool defaultPlayer() const { return m_defaultPlayer; }
+    QString defaultPlayerError() const { return m_defaultPlayerError; }
     Q_INVOKABLE void checkDefaultPlayer();
     Q_INVOKABLE void makeDefaultPlayer();
     int customBindings() const { return m_bindings.size(); }
@@ -89,4 +91,6 @@ private:
     QHash<QString, QStringList> m_bindings;
     QString m_language = "en";
     bool m_defaultPlayer = false;
+    QString m_defaultPlayerError;
+    QHash<QString, QStringList> m_sessionBindings;
 };

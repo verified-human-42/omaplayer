@@ -41,7 +41,7 @@ const QList<Settings::Spec> &Settings::specs() {
         {"playback/seekStep", "5", {"1", "3", "5", "10"}},
         {"playback/seekLongStep", "30", {"10", "30", "60"}},
         {"playback/exactSeek", false},
-        {"playback/oneWindow", true},
+        {"playback/openIn", "replace", {"replace", "window"}},
         {"playback/clickPause", true},
         {"playback/wheel", "volume", {"volume", "seek"}},
 
@@ -62,8 +62,7 @@ const QList<Settings::Spec> &Settings::specs() {
         {"audio/normalize", false},
         {"audio/language", ""},
         {"audio/device", "auto"},
-        {"audio/stereo", false},
-        {"audio/passthrough", false},
+        {"audio/surround", "auto", {"auto", "stereo", "receiver"}},
         {"audio/rememberVolume", true},
 
         {"subtitles/auto", "fuzzy", {"fuzzy", "exact", "no"}},
@@ -126,6 +125,13 @@ QStringList Settings::changedKeys() const {
     for (const auto &spec : specs())
         if (m_values.value(spec.key) != m_session.value(spec.key))
             keys.append(spec.key);
+    // Shortcuts count too, as "keys/<action>", so Undo all takes them back.
+    QStringList ids = m_bindings.keys() + m_sessionBindings.keys();
+    ids.removeDuplicates();
+    ids.sort();
+    for (const auto &id : ids)
+        if (m_bindings.value(id) != m_sessionBindings.value(id))
+            keys.append("keys/" + id);
     return keys;
 }
 
@@ -143,17 +149,31 @@ void Settings::set(const QString &key, const QVariant &value) {
 }
 
 void Settings::undo(const QString &key) {
-    if (m_session.contains(key))
+    if (key.startsWith("keys/")) {
+        const QString id = key.mid(5);
+        if (m_sessionBindings.contains(id))
+            m_bindings.insert(id, m_sessionBindings.value(id));
+        else
+            m_bindings.remove(id);
+        storeBindings();
+    } else if (m_session.contains(key)) {
         set(key, m_session.value(key));
+    }
 }
 
 void Settings::undoAll() {
     for (const auto &key : changedKeys())
-        set(key, m_session.value(key));
+        if (!key.startsWith("keys/"))
+            set(key, m_session.value(key));
+    if (m_bindings != m_sessionBindings) {
+        m_bindings = m_sessionBindings;
+        storeBindings();
+    }
 }
 
 void Settings::beginSession() {
     m_session = m_values;
+    m_sessionBindings = m_bindings;
     emit changed();
 }
 
@@ -209,11 +229,12 @@ void Settings::apply(const QString &key) {
         m_player->set("alang", value.toString());
     else if (key == "audio/device")
         m_player->set("audio-device", value.toString().isEmpty() ? QString("auto") : value.toString());
-    else if (key == "audio/stereo")
-        m_player->set("audio-channels", value.toBool() ? "stereo" : "auto-safe");
-    else if (key == "audio/passthrough")
-        // Sends surround tracks untouched to a receiver over HDMI or S/PDIF.
-        m_player->set("audio-spdif", value.toBool() ? "ac3,eac3,dts,dts-hd,truehd" : "");
+    else if (key == "audio/surround") {
+        // Stereo folds surround into two channels; a receiver gets Dolby and
+        // DTS untouched over HDMI or S/PDIF and decodes them itself.
+        m_player->set("audio-channels", value.toString() == "stereo" ? "stereo" : "auto-safe");
+        m_player->set("audio-spdif", value.toString() == "receiver" ? "ac3,eac3,dts,dts-hd,truehd" : "");
+    }
 
     else if (key == "subtitles/auto")
         m_player->setSubtitleMode(value.toString());
@@ -370,7 +391,7 @@ void Settings::resetAll() {
     resetAllKeys();
 }
 
-// The MIME types Omaplayer's launcher entry says it plays.
+// The MIME types OmaPlayer's launcher entry says it plays.
 QStringList Settings::mediaTypes() {
     QFile desktop(QStandardPaths::locate(QStandardPaths::ApplicationsLocation, "omaplayer.desktop"));
     if (!desktop.open(QIODevice::ReadOnly))
@@ -396,12 +417,24 @@ void Settings::checkDefaultPlayer() {
 
 void Settings::makeDefaultPlayer() {
     const QStringList types = mediaTypes();
-    if (types.isEmpty())
+    if (types.isEmpty()) {
+        m_defaultPlayerError = tr("OmaPlayer's launcher entry wasn't found. Install it as a package first.");
+        emit defaultPlayerChanged();
         return;
+    }
     auto *assign = new QProcess(this);
-    connect(assign, &QProcess::finished, this, [this, assign] {
+    connect(assign, &QProcess::finished, this, [this, assign](int code, QProcess::ExitStatus status) {
         assign->deleteLater();
+        m_defaultPlayerError = status == QProcess::NormalExit && code == 0
+                                   ? QString() : tr("xdg-mime couldn't set it: %1").arg(QString::fromUtf8(assign->readAllStandardError()).trimmed());
+        emit defaultPlayerChanged();
         checkDefaultPlayer();
+    });
+    connect(assign, &QProcess::errorOccurred, this, [this](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            m_defaultPlayerError = tr("xdg-mime isn't installed.");
+            emit defaultPlayerChanged();
+        }
     });
     assign->start("xdg-mime", QStringList{"default", "omaplayer.desktop"} + types);
 }

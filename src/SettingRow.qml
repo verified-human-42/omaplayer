@@ -16,14 +16,20 @@ Item {
     readonly property bool radio: entry.type === "radio"
     readonly property var value: radio ? settings.values[entry.setting]
                                : key !== "" && !binding ? settings.values[key] : undefined
+    // Settings rows mark a change since the page opened, with a way back;
+    // key bindings mark keys that differ from the layout, with a way home.
     readonly property bool changed: binding ? entry.custom === true
-                                  : radio ? false
+                                  : radio ? String(value) === String(entry.value) && settings.changedKeys.indexOf(entry.setting) >= 0
                                   : key !== "" && settings.changedKeys.indexOf(key) >= 0
+    // A reset row asks once more before it acts.
+    property bool confirming: false
     readonly property bool interactive: ["switch", "choice", "menu", "level", "text", "binding", "action", "radio"].indexOf(entry.type) >= 0
     readonly property color ink: theme.foreground
 
     signal pointed()
     signal captureRequested()
+    // A text field let go of the keyboard (Enter, Esc, Tab).
+    signal editingDone()
 
     // Room between the row's side margins. A control that would take more
     // than half of it (a long segmented choice in a narrow window, a field)
@@ -72,12 +78,18 @@ Item {
         } else if (radio) {
             settings.set(entry.setting, entry.value);
         } else if (entry.type === "action" && control.item && control.item.usable) {
-            if (entry.command === "resetAllKeys")
-                settings.resetAllKeys();
-            else if (entry.command === "resetAll")
-                settings.resetAll();
-            else if (entry.command === "makeDefaultPlayer")
+            if (entry.command === "makeDefaultPlayer") {
                 settings.makeDefaultPlayer();
+            } else if (!confirming) {
+                confirming = true;
+                confirmTimer.restart();
+            } else {
+                confirming = false;
+                if (entry.command === "resetAllKeys")
+                    settings.resetAllKeys();
+                else if (entry.command === "resetAll")
+                    settings.resetAll();
+            }
         }
     }
 
@@ -85,7 +97,13 @@ Item {
         if (binding)
             settings.resetKeys(entry.actionId);
         else
-            settings.undo(key);
+            settings.undo(radio ? entry.setting : key);
+    }
+
+    Timer {
+        id: confirmTimer
+        interval: 3000
+        onTriggered: row.confirming = false
     }
 
     Rectangle {
@@ -96,6 +114,16 @@ Item {
         anchors.bottomMargin: 3
         radius: Math.max(6, theme.radius)
         color: row.current && row.interactive ? Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.07) : "transparent"
+
+        // The keyboard cursor, plain to see against the card.
+        Rectangle {
+            visible: row.current && row.interactive
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            width: 2
+            height: parent.height - 12
+            color: theme.accent
+        }
     }
 
     HoverHandler {
@@ -131,7 +159,7 @@ Item {
             Label {
                 anchors.baseline: title.baseline
                 visible: row.changed
-                text: qsTr("(reset)")
+                text: row.binding ? qsTr("(default)") : qsTr("(undo)")
                 color: resetMouse.containsMouse ? theme.accent : Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.6)
                 font.pixelSize: 10
                 font.underline: resetMouse.containsMouse
@@ -152,7 +180,7 @@ Item {
             width: parent.width
             text: row.entry.description || ""
             color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.6)
-            font.pixelSize: 11
+            font.pixelSize: 12
             wrapMode: Text.WordWrap
         }
 
@@ -234,6 +262,7 @@ Item {
             value: String(row.value)
             placeholder: row.entry.placeholder || ""
             onCommitted: (next) => settings.set(row.key, next)
+            onDone: row.editingDone()
         }
     }
 
@@ -339,7 +368,7 @@ Item {
             readonly property bool usable: row.entry.command === "resetAllKeys" ? settings.customBindings > 0
                                          : row.entry.command === "makeDefaultPlayer" ? !settings.defaultPlayer
                                          : true
-            implicitWidth: actionText.implicitWidth + 24
+            implicitWidth: Math.max(actionText.implicitWidth, sizer.implicitWidth) + 24
             implicitHeight: 24
             radius: theme.radius > 0 ? height / 2 : 0
             opacity: usable ? 1 : 0.4
@@ -347,11 +376,18 @@ Item {
             border.width: 1
             border.color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.35)
 
+            // Sized for the longer of its two words, so it doesn't jump.
+            Label {
+                id: sizer
+                visible: false
+                text: qsTr("Sure? Press again")
+                font: actionText.font
+            }
             Label {
                 id: actionText
                 anchors.centerIn: parent
-                text: row.entry.button || ""
-                color: row.ink
+                text: row.confirming ? qsTr("Sure? Press again") : row.entry.button || ""
+                color: row.confirming ? theme.error : row.ink
                 font.pixelSize: 11
                 font.weight: Font.DemiBold
             }

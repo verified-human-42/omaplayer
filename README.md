@@ -2,26 +2,26 @@
 
 <img src="pkgbuild/omaplayer.svg" width="88" alt="">
 
-# Omaplayer
+# OmaPlayer
 <br> <br>
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
-  <img src="docs/hero-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: Omaplayer.">
+  <img src="docs/hero-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: OmaPlayer.">
 </picture>
 
 <br><br>
 
-<img src="docs/screenshots/playback.webp" alt="Omaplayer playing an interview with Korean subtitles, tiled beside btop, fastfetch, and Neovim">
+<img src="docs/screenshots/playback.webp" alt="OmaPlayer playing an interview with Korean subtitles, tiled beside btop, fastfetch, and Neovim">
 
 </div>
 
-## Why Omaplayer
+## Why OmaPlayer
 
 Haruna and Celluloid are decent, but they don't look like Omarchy. Plain mpv is
 fast but bare. And PotPlayer, with the best interface and keys any player ever
 had, doesn't run here.
 
-**So Omaplayer takes PotPlayer's hands, gives it Omarchy's face, and runs on mpv.**
+**So OmaPlayer takes PotPlayer's hands, gives it Omarchy's face, and runs on mpv.**
 
 - **Your hands already know it.** PotPlayer's keys, the right-click master menu,
   the docked bar, Tab for info, and the wheel for volume. The Linux classics
@@ -47,7 +47,7 @@ curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/in
 
 It installs the prebuilt package from the
 [latest release](https://github.com/verified-human-42/omaplayer/releases/latest) with
-pacman, so there's nothing to compile, and Omaplayer shows up in the launcher. Run
+pacman, so there's nothing to compile, and OmaPlayer shows up in the launcher. Run
 it again to update; `sudo pacman -R omaplayer` removes it. To compile instead,
 add `-s -- --build` (the release) or `-s -- --git` (the latest from `main`).
 It works the same on x86_64 and ARM (Apple Silicon with Asahi, Snapdragon).
@@ -55,7 +55,7 @@ It works the same on x86_64 and ARM (Apple Silicon with Asahi, Snapdragon).
 ## Smart subtitles
 
 Most subtitle files were saved on Windows in an old codepage, and players that
-guess the encoding get them wrong. Omaplayer reads each file and picks the
+guess the encoding get them wrong. OmaPlayer reads each file and picks the
 encoding whose text reads like real language: Korean, Japanese, Chinese,
 Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 70+ real lines down to a single word, with no hint.
