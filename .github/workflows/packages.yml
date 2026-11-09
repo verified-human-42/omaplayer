@@ -58,4 +58,13 @@ jobs:
       - name: Attach it to the release
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          gh release upload "$TAG" pkgbuild/omaplayer-[0-9]*-${{ matrix.arch }}.pkg.tar.zst --clobber --repo "$GITHUB_REPOSITORY"
+          # A package already on the release stays put: replacing it would
+          # leave a moment where the installer's download is missing.
+          for package in pkgbuild/omaplayer-[0-9]*-${{ matrix.arch }}.pkg.tar.zst; do
+            name=$(basename "$package")
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets -q '.assets[].name' | grep -qx "$name"; then
+              echo "$name is already on $TAG"
+            else
+              gh release upload "$TAG" "$package" --repo "$GITHUB_REPOSITORY"
+            fi
+          done
