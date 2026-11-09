@@ -60,25 +60,34 @@ Subtitles › Text encoding forces one.
 
 ## Install
 
-From the AUR, like any other package on Omarchy:
+One line, on Omarchy or any Arch system:
 
 ```sh
-yay -S omaplayer        # the latest release
-yay -S omaplayer-git    # or the latest from main
+curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/install.sh | bash
 ```
 
-Or build it from this repository:
+It builds the latest release as a regular pacman package and installs it, so
+Omaplayer shows up in the app launcher (`Super + Space`). Run it again to
+update; remove it with `sudo pacman -R omaplayer`. For the latest from `main`
+instead of the release, add `--git`:
 
 ```sh
-git clone https://github.com/verified-human-42/omaplayer
-cd omaplayer
-bin/install
+curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/install.sh | bash -s -- --git
 ```
 
-Either way Omaplayer shows up in the app launcher (`Super + Space`). It needs
-`mpv`, Qt 6 (`qt6-base`, `qt6-declarative`, `qt6-wayland`, `qt6-svg`), and
-`xdg-desktop-portal`, all part of Omarchy. Install `yt-dlp` to play stream
-URLs, and `noto-fonts-cjk` for Chinese, Japanese, and Korean text.
+Or install the prebuilt package from the
+[latest release](https://github.com/verified-human-42/omaplayer/releases/latest):
+
+```sh
+sudo pacman -U https://github.com/verified-human-42/omaplayer/releases/download/v0.1.0/omaplayer-0.1.0-1-x86_64.pkg.tar.zst
+```
+
+Or build it from this repository with `bin/install`.
+
+Omaplayer needs `mpv`, Qt 6 (`qt6-base`, `qt6-declarative`, `qt6-wayland`,
+`qt6-svg`), and `xdg-desktop-portal`, all part of Omarchy, and pulls in
+whatever is missing. Install `yt-dlp` to play stream URLs, and
+`noto-fonts-cjk` for Chinese, Japanese, and Korean text.
 
 ## Use
 
@@ -162,9 +171,9 @@ See `AGENTS.md` for how the pieces fit.
 bin/release 0.2.0
 ```
 
-Sets the version, runs the tests, tags, publishes the GitHub release, and points
-`packaging/aur/omaplayer` at the new tarball with its checksum. Then push each
-folder under `packaging/aur/` to its AUR repository.
+Sets the version, runs the tests, tags, publishes the GitHub release, points
+`packaging/omaplayer` (what `install.sh` builds) at the new tarball with its
+checksum, and attaches a prebuilt package to the release.
 
 ## License
 

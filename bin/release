@@ -2,9 +2,9 @@
 # Cuts a release: bin/release 0.1.0
 #
 # Sets the version everywhere, runs the tests, tags and pushes, publishes the
-# GitHub release, then points the AUR package at the release tarball and
-# regenerates both .SRCINFO files. Publishing to the AUR itself stays a manual
-# push from packaging/aur/<name> (see README).
+# GitHub release, points packaging/omaplayer (what install.sh builds) at the
+# release tarball with its checksum, and attaches a prebuilt package to the
+# release for `sudo pacman -U`.
 set -eu
 
 VERSION=${1:?usage: bin/release VERSION}
@@ -16,8 +16,8 @@ cd "$ROOT"
 git rev-parse "v$VERSION" >/dev/null 2>&1 && { echo "v$VERSION is already tagged." >&2; exit 1; }
 
 sed -i "s/^VERSION = .*/VERSION = $VERSION/" omaplayer.pro
-sed -i "s/^pkgver=.*/pkgver=$VERSION/; s/^pkgrel=.*/pkgrel=1/" pkgbuild/PKGBUILD packaging/aur/omaplayer/PKGBUILD
-sed -i "s/^sha256sums=.*/sha256sums=('SKIP')/" packaging/aur/omaplayer/PKGBUILD
+sed -i "s/^pkgver=.*/pkgver=$VERSION/; s/^pkgrel=.*/pkgrel=1/" pkgbuild/PKGBUILD packaging/omaplayer/PKGBUILD
+sed -i "s/^sha256sums=.*/sha256sums=('SKIP')/" packaging/omaplayer/PKGBUILD
 
 "$ROOT/bin/test"
 
@@ -26,19 +26,18 @@ git tag -a "v$VERSION" -m "Omaplayer $VERSION"
 git push -q origin main "v$VERSION"
 gh release create "v$VERSION" --title "Omaplayer $VERSION" --generate-notes
 
-# The tarball GitHub serves for the tag, checksummed for the AUR package.
+# The tarball GitHub serves for the tag, checksummed for the package.
 REPO=$(gh repo view --json url -q .url)
 SUM=$(curl -fsSL "$REPO/archive/refs/tags/v$VERSION.tar.gz" | sha256sum | cut -d' ' -f1)
-sed -i "s/^sha256sums=.*/sha256sums=('$SUM')/" packaging/aur/omaplayer/PKGBUILD
-
-for package in packaging/aur/*/; do
-  (cd "$package" && makepkg --printsrcinfo > .SRCINFO)
-done
-
-git add packaging
-git commit -qm "Point the AUR packages at v$VERSION"
+sed -i "s/^sha256sums=.*/sha256sums=('$SUM')/" packaging/omaplayer/PKGBUILD
+git commit -qam "Point the package at v$VERSION"
 git push -q origin main
 
-echo "Released v$VERSION. To publish to the AUR:"
-echo "  packaging/aur/omaplayer      -> ssh://aur@aur.archlinux.org/omaplayer.git"
-echo "  packaging/aur/omaplayer-git  -> ssh://aur@aur.archlinux.org/omaplayer-git.git"
+# A prebuilt package on the release, built from that same tarball.
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+cp packaging/omaplayer/PKGBUILD "$WORK/"
+(cd "$WORK" && makepkg -f --noconfirm >/dev/null)
+gh release upload "v$VERSION" "$WORK"/omaplayer-"$VERSION"-*.pkg.tar.zst
+
+echo "Released v$VERSION."
