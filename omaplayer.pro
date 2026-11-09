@@ -6,7 +6,7 @@ TARGET = omaplayer
 TEMPLATE = app
 
 # The one place the version lives; bin/release bumps it.
-VERSION = 0.6.0
+VERSION = 0.9.0
 DEFINES += OMAPLAYER_VERSION=\\\"$$VERSION\\\"
 
 HEADERS += \
