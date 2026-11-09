@@ -4,16 +4,22 @@
 
 # Omaplayer
 
-**Feels like PotPlayer. Looks like Omarchy. Runs on mpv.**
+### Feels like PotPlayer. Looks like Omarchy.
 
-A beautiful, opinionated media player for [Omarchy](https://omarchy.org).
+A beautiful, opinionated media player for [Omarchy](https://omarchy.org), built on mpv.
+
+<br>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/quote-dark.svg">
+  <img src="docs/quote-light.svg" width="900" alt="PotPlayer on Windows is the best media player there is. That's an opinion, and it isn't up for debate. Omaplayer brings what makes it great to Omarchy.">
+</picture>
+
+<br><br>
 
 <img src="docs/screenshots/playback.webp" alt="Omaplayer playing an interview with Korean subtitles, tiled beside btop, fastfetch, and Neovim">
 
 </div>
-
-> PotPlayer on Windows is the best media player there is. That's an opinion, and
-> it isn't up for debate. Omaplayer brings what makes it great to Omarchy.
 
 ## Install
 
