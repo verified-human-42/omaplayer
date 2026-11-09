@@ -143,6 +143,8 @@ signals:
     void tracksChanged();
     void errorChanged();
     void fileLoaded();
+    // Playback picked up again after a seek (or at a file's start).
+    void seeked();
     // The last file played to its end and nothing more is queued.
     void finished();
     void osd(const QString &kind);

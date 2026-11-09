@@ -1,4 +1,7 @@
 #include <QClipboard>
+#include <QDBusConnection>
+#include <QDBusInterface>
+#include <QDBusReply>
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
@@ -9,12 +12,16 @@
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QTemporaryDir>
+#include <QThread>
 #include <QtTest>
 #include <clocale>
+#include <functional>
+#include <memory>
 
 #include <iconv.h>
 
 #include "actions.h"
+#include "mpris.h"
 #include "sami.h"
 #include "textencoding.h"
 #include "player.h"
@@ -854,6 +861,85 @@ private slots:
         QGuiApplication::clipboard()->setText(other);
         QVERIFY(player.openClipboard());
         QTRY_COMPARE_WITH_TIMEOUT(player.path(), other, 10000);
+    }
+
+    // Media keys and the bar reach the player over MPRIS.
+    void mprisControlsPlayback()
+    {
+        if (!QDBusConnection::sessionBus().isConnected())
+            QSKIP("no session bus");
+        QTemporaryDir dir;
+        const QString clip = makeClip(dir.filePath("Song.mkv"), 10);
+        Player player(Player::Output::None);
+        const QString service = QString("org.mpris.MediaPlayer2.omaplayertest%1").arg(QCoreApplication::applicationPid());
+        Mpris mpris(&player, nullptr, service);
+        QVERIFY(mpris.registered());
+        QVERIFY(loadPaused(player, clip));
+
+        // The calls come from another thread on a connection of its own, as a
+        // real client's would: on this thread they'd wait on themselves.
+        auto bus = [&](const std::function<QVariant(QDBusConnection &)> &work) {
+            QVariant result;
+            static int serial = 0;
+            const QString name = QString("omaplayer-tests-%1").arg(++serial);
+            std::unique_ptr<QThread> thread(QThread::create([&] {
+                QDBusConnection connection = QDBusConnection::connectToBus(QDBusConnection::SessionBus, name);
+                result = work(connection);
+            }));
+            thread->start();
+            QTest::qWaitFor([&] { return thread->isFinished(); }, 10000);
+            thread->wait();
+            QDBusConnection::disconnectFromBus(name);
+            return result;
+        };
+        auto get = [&](const QString &interface, const QString &property) {
+            return bus([&](QDBusConnection &connection) {
+                QDBusInterface properties(service, "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties", connection);
+                const QDBusReply<QDBusVariant> reply = properties.call("Get", interface, property);
+                return reply.isValid() ? reply.value().variant() : QVariant();
+            });
+        };
+        auto call = [&](const QString &method, const QVariantList &args = {}) {
+            bus([&](QDBusConnection &connection) {
+                QDBusInterface control(service, "/org/mpris/MediaPlayer2", "org.mpris.MediaPlayer2.Player", connection);
+                control.callWithArgumentList(QDBus::Block, method, args);
+                return QVariant();
+            });
+        };
+        auto set = [&](const QString &property, const QVariant &value) {
+            bus([&](QDBusConnection &connection) {
+                QDBusInterface properties(service, "/org/mpris/MediaPlayer2", "org.freedesktop.DBus.Properties", connection);
+                properties.call("Set", "org.mpris.MediaPlayer2.Player", property, QVariant::fromValue(QDBusVariant(value)));
+                return QVariant();
+            });
+        };
+        const QString root = "org.mpris.MediaPlayer2", control = "org.mpris.MediaPlayer2.Player";
+        QCOMPARE(get(root, "Identity").toString(), QString("OmaPlayer"));
+        QCOMPARE(get(root, "DesktopEntry").toString(), QString("omaplayer"));
+        call("Pause");
+        QTRY_VERIFY(player.paused());
+        QCOMPARE(get(control, "PlaybackStatus").toString(), QString("Paused"));
+        call("PlayPause");
+        QTRY_VERIFY(!player.paused());
+        QCOMPARE(get(control, "PlaybackStatus").toString(), QString("Playing"));
+        call("Pause");
+        QTRY_VERIFY(player.paused());
+
+        call("Seek", {qlonglong(3000000)});
+        QTRY_VERIFY(player.position() > 2.5);
+
+        set("Volume", 0.4);
+        QTRY_COMPARE(player.volume(), 40.0);
+        set("LoopStatus", QString("Track"));
+        QTRY_COMPARE(player.repeatMode(), QString("file"));
+
+        const QVariantMap metadata = qdbus_cast<QVariantMap>(get(control, "Metadata"));
+        QVERIFY(metadata.value("xesam:url").toString().endsWith("Song.mkv"));
+        QVERIFY(metadata.value("mpris:length").toLongLong() > 9000000);
+
+        call("Stop");
+        QTRY_VERIFY(player.idle());
+        QCOMPARE(get(control, "PlaybackStatus").toString(), QString("Stopped"));
     }
 
     void theLastFileEndingIsReported()

@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "actions.h"
+#include "mpris.h"
 #include "player.h"
 #include "portalfilepicker.h"
 #include "settings.h"
@@ -139,6 +140,15 @@ int main(int argc, char *argv[]) {
     if (!window)
         return 1;
     new VideoRenderer(window, &player);
+
+    // Media keys, headphone buttons, playerctl, and the bar's media widget.
+    Mpris mpris(&player);
+    QObject::connect(&mpris, &Mpris::raiseRequested, window, [window] {
+        window->show();
+        window->raise();
+        window->requestActivate();
+    });
+    QObject::connect(&mpris, &Mpris::quitRequested, window, &QWindow::close);
     QObject::connect(window, &QQuickWindow::frameSwapped, window, [] {
         qCInfo(lcTiming, "window shown at %lld", QDateTime::currentMSecsSinceEpoch());
     }, Qt::ConnectionType(Qt::DirectConnection | Qt::SingleShotConnection));

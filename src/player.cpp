@@ -278,6 +278,10 @@ void Player::handleEvent(const mpv_event &event) {
         emit fileLoaded();
         emit osd(m_position > 1 ? "resume" : "file");
         break;
+    case MPV_EVENT_PLAYBACK_RESTART:
+        refresh("position");
+        emit seeked();
+        break;
     case MPV_EVENT_END_FILE: {
         const auto *end = static_cast<mpv_event_end_file *>(event.data);
         if (end->reason == MPV_END_FILE_REASON_ERROR) {
