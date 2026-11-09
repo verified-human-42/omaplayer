@@ -36,8 +36,9 @@ QString keyLabel(const QString &key) {
 
 Actions::Actions(Player *player, QObject *parent) : QObject(parent), m_player(player) {}
 
-// The first key column is Omaplayer's own layout, the one Windows media
-// player veterans already have in their fingers; the second follows mpv's
+// The first key column is Omaplayer's own layout: the keys Windows media
+// player veterans already have in their fingers, plus the ones every Linux
+// app answers to (Ctrl+, Ctrl+Q, F11, Ctrl+L). The second follows mpv's
 // default input.conf, for people coming from plain mpv.
 const QList<Actions::Spec> &Actions::specs() {
     using K = Kind;
@@ -46,10 +47,10 @@ const QList<Actions::Spec> &Actions::specs() {
         {"open-clipboard", "file", QT_TRANSLATE_NOOP("Actions", "Open from Clipboard"), {"Ctrl+V"}, {"Ctrl+V"}, K::Player, {}, {}},
         {"previous-file", "file", QT_TRANSLATE_NOOP("Actions", "Previous File"), {"PgUp"}, {"<"}, K::Mpv, {"playlist-prev"}, "playlist"},
         {"next-file", "file", QT_TRANSLATE_NOOP("Actions", "Next File"), {"PgDown"}, {">"}, K::Mpv, {"playlist-next"}, "playlist"},
-        {"playlist", "file", QT_TRANSLATE_NOOP("Actions", "Playlist"), {"F6"}, {"F8"}, K::Window, {}, {}},
+        {"playlist", "file", QT_TRANSLATE_NOOP("Actions", "Playlist"), {"F6", "Ctrl+L"}, {"F8"}, K::Window, {}, {}},
         {"shuffle", "file", QT_TRANSLATE_NOOP("Actions", "Shuffle Playlist"), {}, {}, K::Mpv, {"playlist-shuffle"}, "shuffle"},
         {"repeat", "file", QT_TRANSLATE_NOOP("Actions", "Repeat Playlist"), {}, {"Shift+L"}, K::Mpv, {"cycle-values", "loop-playlist", "inf", "no"}, "repeat"},
-        {"quit", "file", QT_TRANSLATE_NOOP("Actions", "Quit"), {"Q"}, {"Q"}, K::Window, {}, {}},
+        {"quit", "file", QT_TRANSLATE_NOOP("Actions", "Quit"), {"Q", "Ctrl+Q"}, {"Q", "Ctrl+Q"}, K::Window, {}, {}},
 
         {"play-pause", "playback", QT_TRANSLATE_NOOP("Actions", "Play / Pause"), {"Space"}, {"Space"}, K::Player, {}, {}},
         {"stop", "playback", QT_TRANSLATE_NOOP("Actions", "Stop"), {}, {}, K::Player, {}, {}},
@@ -76,12 +77,12 @@ const QList<Actions::Spec> &Actions::specs() {
         {"next-subtitle", "subtitles", QT_TRANSLATE_NOOP("Actions", "Next Subtitle Track"), {}, {"J"}, K::Mpv, {"cycle", "sub"}, "subtitle"},
         {"toggle-subtitles", "subtitles", QT_TRANSLATE_NOOP("Actions", "Show / Hide Subtitles"), {"Alt+H"}, {"V"}, K::Mpv, {"cycle", "sub-visibility"}, "sub-visibility"},
 
-        {"fullscreen", "screen", QT_TRANSLATE_NOOP("Actions", "Fullscreen"), {"Return", "Enter"}, {"F"}, K::Window, {}, {}},
+        {"fullscreen", "screen", QT_TRANSLATE_NOOP("Actions", "Fullscreen"), {"Return", "Enter", "F11"}, {"F", "F11"}, K::Window, {}, {}},
         {"exit-fullscreen", "screen", QT_TRANSLATE_NOOP("Actions", "Exit Fullscreen"), {"Esc"}, {"Esc"}, K::Window, {}, {}},
-        {"info", "screen", QT_TRANSLATE_NOOP("Actions", "Playback Info"), {"Tab"}, {"I"}, K::Window, {}, {}},
+        {"info", "screen", QT_TRANSLATE_NOOP("Actions", "Playback Info"), {"Tab", "Ctrl+I"}, {"I"}, K::Window, {}, {}},
 
-        {"settings", "help", QT_TRANSLATE_NOOP("Actions", "Settings…"), {"F5"}, {"Ctrl+,"}, K::Window, {}, {}},
-        {"shortcuts", "help", QT_TRANSLATE_NOOP("Actions", "Keyboard Shortcuts"), {"?", "F1"}, {"?"}, K::Window, {}, {}},
+        {"settings", "help", QT_TRANSLATE_NOOP("Actions", "Settings…"), {"F5", "Ctrl+,"}, {"Ctrl+,"}, K::Window, {}, {}},
+        {"shortcuts", "help", QT_TRANSLATE_NOOP("Actions", "Keyboard Shortcuts"), {"?", "F1", "Ctrl+/"}, {"?", "F1"}, K::Window, {}, {}},
     };
     return table;
 }

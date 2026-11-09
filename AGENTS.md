@@ -91,8 +91,18 @@ pkgbuild/                PKGBUILD, .desktop, icon
    (no picture, everything else real). Real video needs a real screen.
 4. Startup timing: `QT_LOGGING_RULES="omaplayer.timing.info=true" build/omaplayer FILE`
    prints `main`, `qml loaded`, `render context`, `file loaded`, and `first frame` timestamps.
-   mpv's own log: `OMAPLAYER_MPV_LOG=v`.
+   mpv's own log: `OMAPLAYER_MPV_LOG=v`. Extra mpv options: `OMAPLAYER_MPV_OPTIONS="a=b;c=d"`.
+   A real frame, video included, without a screen capture tool:
+   `OMAPLAYER_GRAB=shot.png:3000 build/omaplayer FILE` saves the window after 3 s and quits.
 5. `bin/install` builds and installs the package so it's in the launcher.
+
+## OpenGL trap met here
+
+Qt leaves its own GL state behind between frames (blending above all). mpv
+assumes defaults, so `VideoRenderer::render()` resets blend, depth, stencil,
+scissor, cull, and the colour mask before every `mpv_render_context_render`.
+Without it the picture is black while playing and off-colour when paused,
+while mpv's background still draws, which makes it look like a sizing bug.
 
 ## Qt Quick traps met here
 

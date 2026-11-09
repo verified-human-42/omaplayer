@@ -247,6 +247,12 @@ Popup {
         case Qt.Key_F5:
             close();
             break;
+        case Qt.Key_Comma:
+            if (event.modifiers & Qt.ControlModifier)
+                close();
+            else
+                return;
+            break;
         case Qt.Key_Slash:
             searchInput.forceActiveFocus();
             break;

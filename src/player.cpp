@@ -151,12 +151,19 @@ Player::Player(Output output, QObject *parent) : QObject(parent), m_videoReady(o
     // is built here rather than by mpv's autocreate-playlist, which starts the
     // file, swaps in the folder, and starts it again.
     option("sub-auto", "fuzzy");
+    // Subtitles stay on the picture, never in the strip the docked bar covers.
+    option("sub-use-margins", "no");
 
     // Pick up where a file was left. Volume stays global, not per file.
     const QString state = QStandardPaths::writableLocation(QStandardPaths::GenericStateLocation);
     option("watch-later-dir", QDir(state).filePath("omaplayer/watch_later").toUtf8());
     option("watch-later-options", "start,aid,sid,secondary-sid,sub-delay,audio-delay");
     option("resume-playback", "yes");
+
+    // For development: OMAPLAYER_MPV_OPTIONS="vf=format=rgb24;hwdec=no" sets
+    // mpv options directly, after everything above.
+    for (const auto &pair : qEnvironmentVariable("OMAPLAYER_MPV_OPTIONS").split(';', Qt::SkipEmptyParts))
+        option(pair.section('=', 0, 0).toUtf8().constData(), pair.section('=', 1).toUtf8());
 
     mpv_observe_property(m_mpv, Idle, "idle-active", MPV_FORMAT_FLAG);
     mpv_observe_property(m_mpv, Pause, "pause", MPV_FORMAT_FLAG);

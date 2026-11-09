@@ -7,6 +7,7 @@
 #include <QQmlContext>
 #include <QQuickStyle>
 #include <QQuickWindow>
+#include <QTimer>
 #include <QUrl>
 #include <clocale>
 
@@ -97,6 +98,17 @@ int main(int argc, char *argv[]) {
     QObject::connect(window, &QQuickWindow::frameSwapped, window, [] {
         qCInfo(lcTiming, "window shown at %lld", QDateTime::currentMSecsSinceEpoch());
     }, Qt::ConnectionType(Qt::DirectConnection | Qt::SingleShotConnection));
+
+    // For development: OMAPLAYER_GRAB=shot.png[:ms] saves what the window
+    // shows, video included, after ms (default 3000), then quits.
+    if (const QString grab = qEnvironmentVariable("OMAPLAYER_GRAB"); !grab.isEmpty()) {
+        const QString path = grab.section(':', 0, 0);
+        const int after = grab.section(':', 1, 1).isEmpty() ? 3000 : grab.section(':', 1, 1).toInt();
+        QTimer::singleShot(after, window, [window, path] {
+            window->grabWindow().save(path);
+            QCoreApplication::quit();
+        });
+    }
 
     // Files and URLs from the command line, or from the launcher's %U.
     QStringList items = app.arguments().mid(1);

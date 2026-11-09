@@ -11,8 +11,9 @@ Omarchy theme live.
 
 - **Your hands already know it.** Space, arrows, `Ctrl`+arrows, `PgUp`/`PgDn`,
   `D`/`F` frame stepping, `X`/`C`/`Z` speed, `,`/`.` subtitle sync, `Enter`
-  fullscreen, `Tab` info, `F5` settings, `F6` playlist. Prefer mpv's keys?
-  Switch layouts in Settings.
+  fullscreen, `Tab` info, `F5` settings, `F6` playlist, plus the Linux
+  standards (`Ctrl+,` settings, `Ctrl+Q`, `F11`). Prefer mpv's keys? Switch
+  layouts in Settings.
 - **Your theme is the skin.** Colours come from the current Omarchy theme and
   change the moment you switch themes. Corners follow Hyprland.
 - **mpv underneath, with nothing in the way.** Video is drawn straight into the
@@ -49,9 +50,9 @@ Or drop files on the window, or paste a path or URL with `Ctrl+V`.
 | Open File… | `Ctrl+O` | `Ctrl+O` |
 | Open from Clipboard | `Ctrl+V` | `Ctrl+V` |
 | Previous / Next File | `PgUp` / `PgDn` | `<` / `>` |
-| Playlist | `F6` | `F8` |
+| Playlist | `F6` / `Ctrl+L` | `F8` |
 | Repeat Playlist | — | `Shift+L` |
-| Quit | `Q` | `Q` |
+| Quit | `Q` / `Ctrl+Q` | `Q` / `Ctrl+Q` |
 | Play / Pause | `Space` | `Space` |
 | Previous / Next Frame | `D` / `F` | `,` / `.` |
 | Slower / Faster / Normal Speed | `X` / `C` / `Z` | `[` / `]` / `Backspace` |
@@ -64,11 +65,11 @@ Or drop files on the window, or paste a path or URL with `Ctrl+V`.
 | Subtitles 0.5 s Earlier / Later | `,` / `.` | `Z` / `Shift+Z` |
 | Next Subtitle Track | — | `J` |
 | Show / Hide Subtitles | `Alt+H` | `V` |
-| Fullscreen | `Enter` | `F` |
+| Fullscreen | `Enter` / `F11` | `F` / `F11` |
 | Exit Fullscreen | `Esc` | `Esc` |
-| Playback Info | `Tab` | `I` |
-| Settings | `F5` | `Ctrl+,` |
-| Keyboard Shortcuts | `?` / `F1` | `?` |
+| Playback Info | `Tab` / `Ctrl+I` | `I` |
+| Settings | `F5` / `Ctrl+,` | `Ctrl+,` |
+| Keyboard Shortcuts | `?` / `F1` / `Ctrl+/` | `?` / `F1` |
 
 Everything else, including Stop, Shuffle, and track switching, is in the
 right-click menu.

@@ -83,22 +83,37 @@ void VideoRenderer::render() {
 
     const uint64_t flags = mpv_render_context_update(m_context);
     const qreal ratio = m_window->effectiveDevicePixelRatio();
-    // Qt has already bound the pass's target: the window's framebuffer on
-    // screen, or a texture when the window is being grabbed.
+    const int width = static_cast<int>(std::lround(m_window->width() * ratio));
+    const int height = static_cast<int>(std::lround(m_window->height() * ratio));
+    if (width <= 0 || height <= 0)
+        return;
+
+    m_window->beginExternalCommands();
+    auto *gl = QOpenGLContext::currentContext()->functions();
+
+    // Qt has already bound this pass's target: the window on screen, or a
+    // texture when the window is being grabbed.
     GLint target = 0;
-    QOpenGLContext::currentContext()->functions()->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &target);
-    mpv_opengl_fbo fbo{static_cast<int>(target),
-                       static_cast<int>(std::lround(m_window->width() * ratio)),
-                       static_cast<int>(std::lround(m_window->height() * ratio)), 0};
-    // OpenGL targets have their origin at the bottom.
+    gl->glGetIntegerv(GL_FRAMEBUFFER_BINDING, &target);
+
+    // mpv expects default fixed-function state, and Qt leaves its own behind
+    // from the last frame: with blending still on, the picture comes out
+    // black while playing and off-colour when paused.
+    gl->glDisable(GL_BLEND);
+    gl->glDisable(GL_DEPTH_TEST);
+    gl->glDisable(GL_STENCIL_TEST);
+    gl->glDisable(GL_SCISSOR_TEST);
+    gl->glDisable(GL_CULL_FACE);
+    gl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+    mpv_opengl_fbo fbo{static_cast<int>(target), width, height, 0};
+    // OpenGL framebuffers have their origin at the bottom.
     int flip = 1;
     mpv_render_param params[] = {
         {MPV_RENDER_PARAM_OPENGL_FBO, &fbo},
         {MPV_RENDER_PARAM_FLIP_Y, &flip},
         {MPV_RENDER_PARAM_INVALID, nullptr},
     };
-
-    m_window->beginExternalCommands();
     mpv_render_context_render(m_context, params);
     m_window->endExternalCommands();
 
