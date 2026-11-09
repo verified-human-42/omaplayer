@@ -163,6 +163,7 @@ private:
     void loadStreamSupport();
     void loadSubtitles();
     void chooseSecondSubtitle();
+    void addNextSubtitle();
     void screenshotInSoftware(const QString &path, const QString &kind);
     void finishScreenshot(const QString &kind, bool ok);
     static QStringList normalize(const QVariantList &items);
@@ -205,6 +206,8 @@ private:
     QString m_screenshotFormat = "png";
     QString m_lastScreenshot;
     QVariantMap m_savedPicture;
+    QList<QList<QByteArray>> m_subtitleQueue;
+    bool m_announceSubtitle = false;
     // What to go back to when something opened from the clipboard won't play.
     QString m_fallbackPath;
     double m_fallbackPosition = 0;

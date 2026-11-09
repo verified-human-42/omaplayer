@@ -270,6 +270,8 @@ void Player::handleEvent(const mpv_event &event) {
         qCInfo(lcTiming, "start file at %lld", QDateTime::currentMSecsSinceEpoch());
         m_endedAtEof = false;
         m_secondChosen = false;
+        m_subtitleQueue.clear();
+        m_announceSubtitle = false;
         const QString path = get("path").toString();
         if (!path.isEmpty() && path != m_path) {
             m_path = path;
@@ -331,6 +333,10 @@ void Player::handleEvent(const mpv_event &event) {
         const QString kind = m_pendingOsd.take(event.reply_userdata);
         if (kind.isEmpty())
             break;
+        if (kind == "sub-add") {
+            addNextSubtitle();
+            break;
+        }
         if (event.error < 0) {
             if (kind == "playlist")
                 emit osd("playlist-edge");
@@ -507,11 +513,26 @@ void Player::addSubtitles(const QStringList &paths, bool select) {
     if (shown < 0 && (select || !current.isValid() || current.toString() == "no" || current.toBool() == false))
         shown = 0;
 
+    // One after another, so the tracks keep the files' order: added all at
+    // once, mpv numbers them in whatever order they finish loading.
     for (qsizetype i = 0; i < tracks.size(); ++i)
-        sendCommand({"sub-add", tracks[i].path.toUtf8(), i == shown ? "select" : "auto",
-                     tracks[i].title.toUtf8(), tracks[i].language.toUtf8()});
-    if (select)
-        emit osd("subtitle");
+        m_subtitleQueue.append({tracks[i].path.toUtf8(), i == shown ? "select" : "auto",
+                                tracks[i].title.toUtf8(), tracks[i].language.toUtf8()});
+    m_announceSubtitle = m_announceSubtitle || select;
+    if (m_subtitleQueue.size() == tracks.size())
+        addNextSubtitle();
+}
+
+void Player::addNextSubtitle() {
+    if (m_subtitleQueue.isEmpty()) {
+        if (std::exchange(m_announceSubtitle, false))
+            emit osd("subtitle");
+        return;
+    }
+    const QList<QByteArray> next = m_subtitleQueue.takeFirst();
+    const quint64 userdata = m_nextRequest++;
+    m_pendingOsd.insert(userdata, "sub-add");
+    sendCommand(QList<QByteArray>{"sub-add"} + next, userdata);
 }
 
 void Player::append(const QVariantList &items) {

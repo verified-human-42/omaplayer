@@ -457,6 +457,12 @@ private slots:
         QVERIFY(titles.contains("English"));
         QVERIFY(titles.contains("ja"));
         QCOMPARE(selected, QString("한국어"));
+        // In the files' order, every time.
+        QStringList languages;
+        for (const auto &track : player.tracks())
+            if (track.toMap().value("type") == "sub")
+                languages.append(track.toMap().value("lang").toString());
+        QCOMPARE(languages, (QStringList{"ja", "ko", "en"}));
     }
 
     void playerSaysWhatWentWrong()
