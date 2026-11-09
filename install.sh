@@ -37,9 +37,32 @@ make_way_for() {
   fi
 }
 
+# omarchy-update runs the scripts in this folder when it's done, so OmaPlayer
+# updates along with everything else. It checks the latest release and only
+# downloads when there's a newer one.
+install_update_hook() {
+  local hooks="$HOME/.config/omarchy/hooks/post-update.d"
+  mkdir -p "$hooks"
+  cat >"$hooks/omaplayer" <<'HOOK'
+#!/bin/bash
+# Installed by OmaPlayer: omarchy-update updates OmaPlayer too.
+# Remove this file to stop it.
+installed=$(pacman -Q omaplayer 2>/dev/null | awk '{print $2}')
+[[ -n $installed ]] || exit 0
+latest=$(curl -fsSL --max-time 10 https://api.github.com/repos/verified-human-42/omaplayer/releases/latest |
+  grep -o '"tag_name": *"v[^"]*"' | sed 's/.*"v\(.*\)"/\1/')
+[[ -n $latest ]] || exit 0
+(($(vercmp "$latest-1" "$installed") > 0)) || exit 0
+echo "Updating OmaPlayer ${installed%-*} to $latest"
+curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/install.sh | bash
+HOOK
+}
+
 done_message() {
+  install_update_hook
   echo
   echo "OmaPlayer is installed. Find it in the app launcher (Super + Space), or run: omaplayer"
+  echo "omarchy-update keeps it up to date."
 }
 
 # The prebuilt package attached to the latest release. pacman pulls in mpv,

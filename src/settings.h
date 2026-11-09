@@ -65,6 +65,8 @@ public:
     // Every setting and key back to how it came, undoable until the page closes.
     Q_INVOKABLE void resetAll();
     Q_INVOKABLE QString lastFile() const;
+    // Whether install.sh set up omarchy-update to update OmaPlayer too.
+    Q_INVOKABLE static bool updatesWithOmarchy();
 
     Q_INVOKABLE static QString defaultScreenshotFolder();
     static QStringList mediaTypes();

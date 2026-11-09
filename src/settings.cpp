@@ -459,3 +459,7 @@ QString Settings::lastFile() const {
             return path;
     return {};
 }
+
+bool Settings::updatesWithOmarchy() {
+    return QFile::exists(QDir::home().filePath(".config/omarchy/hooks/post-update.d/omaplayer"));
+}

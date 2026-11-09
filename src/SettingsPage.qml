@@ -323,6 +323,8 @@ Popup {
                         rows: [
                             { type: "fact", label: qsTr("Version"), value: Qt.application.version,
                               url: "https://github.com/verified-human-42/omaplayer/releases" },
+                            { type: "fact", label: qsTr("Updates"),
+                              value: settings.updatesWithOmarchy() ? qsTr("With omarchy-update") : qsTr("Run the install line again") },
                             { type: "fact", label: qsTr("Website"), value: "github.com/verified-human-42/omaplayer",
                               url: "https://github.com/verified-human-42/omaplayer" },
                             { type: "fact", label: qsTr("License"), value: "GPL-3.0",
