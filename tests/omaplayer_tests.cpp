@@ -818,7 +818,8 @@ private slots:
             if (spec.id.startsWith("loop-")) expected = {"ab-loop"};
             if (spec.id == "screenshot") expected = {"screenshot"};
             if (spec.id == "copy-frame") expected = {"screenshot-copy"};
-            if (spec.id == "picture-reset") expected = {"picture-reset"};
+            if (spec.id == "picture-reset") expected = {"picture-reset", "picture-back"};
+            if (spec.id == "copy-subtitle") expected = {"subtitle-copied", "subtitle-copy-none"};
             if (spec.osd == "chapter" || spec.osd == "subtitle-line") expected.append(spec.osd + "-none");
             QVERIFY2(expected.contains(kind), qPrintable(QString("%1 said %2").arg(spec.id, kind)));
         }

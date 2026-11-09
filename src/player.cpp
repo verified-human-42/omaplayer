@@ -960,3 +960,13 @@ void Player::chooseSecondSubtitle() {
             }
     }
 }
+
+void Player::copySubtitle() {
+    const QString text = get("sub-text").toString().trimmed();
+    if (text.isEmpty()) {
+        emit osd("subtitle-copy-none");
+        return;
+    }
+    QGuiApplication::clipboard()->setText(text);
+    emit osd("subtitle-copied");
+}

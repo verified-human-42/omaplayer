@@ -236,6 +236,12 @@ ApplicationWindow {
             var line = player.get("sub-text") || "";
             osd.show({ icon: "subtitles", label: Format.time(player.position), value: line.replace(/\n/g, " ") });
             break;
+        case "subtitle-copied":
+            osd.show({ label: qsTr("Subtitle"), value: qsTr("Copied") });
+            break;
+        case "subtitle-copy-none":
+            osd.show({ label: qsTr("Subtitle"), value: qsTr("None on screen") });
+            break;
         case "subtitle-line-none":
             osd.show({ label: qsTr("Subtitles"), value: qsTr("No more lines") });
             break;

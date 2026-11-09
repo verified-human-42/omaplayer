@@ -16,8 +16,26 @@ Item {
     readonly property real shown: holding ? target : player.position
     readonly property real fraction: duration > 0 ? Math.max(0, Math.min(1, shown / duration)) : 0
     readonly property color ink: theme.stageForeground
+    // [{ title, time }], read when a file loads.
+    property var chapters: []
+
+    // The chapter at a moment, for the hover label.
+    function chapterAt(seconds) {
+        var title = "";
+        chapters.forEach(function (chapter) {
+            if (chapter.time <= seconds)
+                title = chapter.title || "";
+        });
+        return title;
+    }
 
     implicitHeight: 22
+
+    Connections {
+        target: player
+        function onFileLoaded() { bar.chapters = player.get("chapter-list") || []; }
+        function onIdleChanged() { if (player.idle) bar.chapters = []; }
+    }
 
     Rectangle {
         id: track
@@ -33,6 +51,19 @@ Item {
             height: parent.height
             radius: parent.radius
             color: theme.accent
+        }
+
+        // Where each chapter starts, as the Windows players mark them.
+        Repeater {
+            model: bar.duration > 0 ? bar.chapters.filter(function (chapter) { return chapter.time > 0; }) : []
+            delegate: Rectangle {
+                required property var modelData
+                x: track.width * modelData.time / bar.duration - width / 2
+                anchors.verticalCenter: parent.verticalCenter
+                width: 2
+                height: track.height + 6
+                color: Qt.rgba(bar.ink.r, bar.ink.g, bar.ink.b, 0.75)
+            }
         }
     }
 
@@ -59,7 +90,8 @@ Item {
         Label {
             id: hoverTime
             anchors.centerIn: parent
-            text: Format.time(bar.duration * Math.max(0, Math.min(1, mouse.mouseX / bar.width)))
+            readonly property real at: bar.duration * Math.max(0, Math.min(1, mouse.mouseX / bar.width))
+            text: Format.time(at) + (bar.chapterAt(at) !== "" ? "  ·  " + bar.chapterAt(at) : "")
             color: theme.stageForeground
             font.family: "monospace"
             font.pixelSize: 12

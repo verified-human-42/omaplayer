@@ -88,6 +88,7 @@ const QList<Actions::Spec> &Actions::specs() {
         {"sub-line-previous", "subtitles", QT_TRANSLATE_NOOP("Actions", "Previous Subtitle Line"), {"Home"}, {"Ctrl+Left"}, K::Mpv, {"sub-seek", "-1"}, "subtitle-line", false},
         {"sub-line-next", "subtitles", QT_TRANSLATE_NOOP("Actions", "Next Subtitle Line"), {"End"}, {"Ctrl+Right"}, K::Mpv, {"sub-seek", "1"}, "subtitle-line", false},
         {"sub-line-replay", "subtitles", QT_TRANSLATE_NOOP("Actions", "Replay This Subtitle Line"), {"Ctrl+Home"}, {}, K::Mpv, {"sub-seek", "0"}, "subtitle-line", false},
+        {"copy-subtitle", "subtitles", QT_TRANSLATE_NOOP("Actions", "Copy This Subtitle Line"), {}, {}, K::Player, {}, {}, false},
         {"sub-earlier", "subtitles", QT_TRANSLATE_NOOP("Actions", "Subtitles 0.5 s Earlier"), {","}, {"Z"}, K::Mpv, {"add", "sub-delay", "-0.5"}, "sub-delay"},
         {"sub-later", "subtitles", QT_TRANSLATE_NOOP("Actions", "Subtitles 0.5 s Later"), {"."}, {"Shift+Z"}, K::Mpv, {"add", "sub-delay", "0.5"}, "sub-delay"},
         {"sub-sync-reset", "subtitles", QT_TRANSLATE_NOOP("Actions", "Reset Subtitle Sync"), {"/"}, {}, K::Mpv, {"set", "sub-delay", "0"}, "sub-delay", false},
@@ -292,6 +293,8 @@ void Actions::trigger(const QString &id) {
                 m_player->screenshot(id == "copy-frame");
             else if (id == "picture-reset")
                 m_player->resetPicture();
+            else if (id == "copy-subtitle")
+                m_player->copySubtitle();
             break;
         case Kind::Window:
             emit windowAction(id);

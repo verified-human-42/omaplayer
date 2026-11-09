@@ -96,6 +96,8 @@ public:
     // Brightness, contrast, saturation, hue, and gamma off; again, back to
     // what they were.
     Q_INVOKABLE void resetPicture();
+    // The subtitle on screen now, to the clipboard: for looking up a word.
+    Q_INVOKABLE void copySubtitle();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void seekTo(double seconds, bool exact);
     // Fractions of the window the video keeps clear of, for docked controls.

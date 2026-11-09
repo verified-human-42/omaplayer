@@ -19,6 +19,11 @@ Check every feature against these.
    frames is opt-in, and startup is measured (see below).
 4. **Video first.** No splash and no nags. Controls step aside in fullscreen.
 
+Two more from the owner: the right-click menu holds **actions** on what's
+playing (tracks, aspect, seeks), and Settings holds **configuration**. A
+preference never goes in the menu. And no feature is worth its weight if it's
+frivolous (margin nudging, skins, 3D): skip it.
+
 ## Naming
 
 The word "PotPlayer" appears only in `README.md` and in promotional copy.
@@ -117,8 +122,11 @@ pkgbuild/                PKGBUILD, .desktop, icon
   OSD, info panel, playlist, and idle screen. They're always the palette's darkest
   surface, even in light themes. Menus, sheets, and settings follow the theme
   as it is.
-- Corner messages and the Tab info panel are bare text on the picture,
-  outlined and shadowed in the stage colours, sized from the window height.
+- Corner messages are one bold line, "Label: value", in the accent, outlined
+  in the stage colour, top left, sized from the window height. Seeks name
+  the action ("Forward 5 Seconds: …"). They aren't customizable, on purpose.
+- The Tab info panel is bold labels with each value in a palette colour
+  (`theme.green`, `blue`, `cyan`, `magenta`, `orange`; never yellow).
 - Boxes (menus, tooltips, dialogs, the shortcut sheet, the error banner) are
   `Card`s, drawn like Omarchy's own popups: a 2px accent border, a near-solid
   surface, Hyprland's rounding, bold text, no small caps.
