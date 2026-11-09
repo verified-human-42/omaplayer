@@ -910,10 +910,24 @@ void Player::finishScreenshot(const QString &kind, bool ok) {
 }
 
 void Player::resetPicture() {
-    for (const char *name : {"brightness", "contrast", "saturation", "gamma", "panscan", "video-zoom",
-                             "video-pan-x", "video-pan-y", "video-rotate"})
+    static const QStringList adjustments{"brightness", "contrast", "saturation", "hue", "gamma"};
+    QVariantMap current;
+    for (const auto &name : adjustments)
+        if (get(name).toDouble() != 0)
+            current.insert(name, get(name).toDouble());
+    if (current.isEmpty() && !m_savedPicture.isEmpty()) {
+        // Back to the adjustments switched off last time.
+        const QVariantMap saved = std::exchange(m_savedPicture, {});
+        for (auto it = saved.begin(); it != saved.end(); ++it)
+            set(it.key(), it.value());
+        command({"ignore"}, "picture-back");
+        return;
+    }
+    if (!current.isEmpty())
+        m_savedPicture = current;
+    for (const auto &name : adjustments)
         set(name, 0);
-    command({"set", "video-aspect-override", "no"}, "picture-reset");
+    command({"ignore"}, "picture-reset");
 }
 
 void Player::setSecondLanguage(const QStringList &codes) {

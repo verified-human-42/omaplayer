@@ -699,7 +699,8 @@ private slots:
         QVERIFY(!QFileInfo::exists(player.lastScreenshot()));
     }
 
-    void pictureResets()
+    // Q, as in the Windows players: colour controls off, and back again.
+    void pictureAdjustmentsToggle()
     {
         QTemporaryDir dir;
         const QString clip = makeClip(dir.filePath("clip.mkv"));
@@ -707,20 +708,21 @@ private slots:
         QSignalSpy osd(&player, &Player::osd);
         QVERIFY(loadPaused(player, clip));
         player.command({"add", "brightness", "10"}, "brightness");
+        player.command({"add", "hue", "-4"}, "hue");
         player.command({"cycle-values", "video-rotate", "90", "0"}, "rotate");
-        player.command({"cycle-values", "panscan", "1", "0"}, "fill");
-        player.command({"cycle-values", "video-aspect-override", "16:9", "no"}, "aspect");
         QTRY_COMPARE(player.get("video-rotate").toInt(), 90);
-        QCOMPARE(player.get("brightness").toInt(), 10);
-        QCOMPARE(player.get("panscan").toDouble(), 1.0);
-        QTRY_VERIFY(qAbs(player.get("video-aspect-override").toDouble() - 16.0 / 9) < 0.01);
+        QTRY_COMPARE(player.get("hue").toInt(), -4);
 
         player.resetPicture();
         QTRY_VERIFY_WITH_TIMEOUT(!osd.isEmpty() && osd.last().first().toString() == "picture-reset", 5000);
         QCOMPARE(player.get("brightness").toInt(), 0);
-        QCOMPARE(player.get("video-rotate").toInt(), 0);
-        QCOMPARE(player.get("panscan").toDouble(), 0.0);
-        QVERIFY(player.get("video-aspect-override").toDouble() < 0); // "no" reads back as -2
+        QCOMPARE(player.get("hue").toInt(), 0);
+        QCOMPARE(player.get("video-rotate").toInt(), 90); // only the colour controls
+
+        player.resetPicture();
+        QTRY_VERIFY_WITH_TIMEOUT(osd.last().first().toString() == "picture-back", 5000);
+        QCOMPARE(player.get("brightness").toInt(), 10);
+        QCOMPARE(player.get("hue").toInt(), -4);
     }
 
     void secondSubtitleShowsUpTop()

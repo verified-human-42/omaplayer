@@ -303,7 +303,10 @@ ApplicationWindow {
             osd.show({ icon: "video", label: qsTr("Saturation"), value: percent(player.get("saturation")) });
             break;
         case "picture-reset":
-            osd.show({ value: qsTr("Picture adjustments reset") });
+            osd.show({ label: qsTr("Picture adjustments"), value: qsTr("Off") });
+            break;
+        case "picture-back":
+            osd.show({ label: qsTr("Picture adjustments"), value: qsTr("Back") });
             break;
         // A file starting: its place in the playlist and its name, and where
         // it picks up when it resumes.

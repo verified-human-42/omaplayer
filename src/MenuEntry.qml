@@ -9,9 +9,14 @@ MenuItem {
 
     property string actionId
     property string keyLabel
+    // Part of a list (tracks, devices) or an on/off option: room for a tick,
+    // shown when this one is chosen or on. Not Qt's checkable, which flips
+    // itself and drops the binding.
+    property bool tickable: false
+    property bool ticked: false
 
     implicitHeight: 30
-    leftPadding: 14
+    leftPadding: entry.tickable ? 30 : 14
     rightPadding: 14
     onTriggered: if (actionId !== "") actions.trigger(actionId)
 
@@ -46,7 +51,16 @@ MenuItem {
         font.pixelSize: 14
     }
 
-    indicator: Item {}
+    // A tick for what's chosen in a list or switched on.
+    indicator: Label {
+        x: 11
+        anchors.verticalCenter: parent.verticalCenter
+        visible: entry.tickable && entry.ticked
+        text: "✓"
+        color: theme.accent
+        font.pixelSize: 13
+        font.bold: true
+    }
 
     background: Rectangle {
         implicitWidth: 220

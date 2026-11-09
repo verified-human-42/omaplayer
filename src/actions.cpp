@@ -99,11 +99,11 @@ const QList<Actions::Spec> &Actions::specs() {
 
         {"screenshot", "video", QT_TRANSLATE_NOOP("Actions", "Save Screenshot"), {"Ctrl+E", "K"}, {"S"}, K::Player, {}, {}, false},
         {"copy-frame", "video", QT_TRANSLATE_NOOP("Actions", "Copy Frame"), {"Ctrl+C"}, {}, K::Player, {}, {}, false},
-        {"aspect", "video", QT_TRANSLATE_NOOP("Actions", "Aspect Ratio"), {"Ctrl+F6"}, {"A"}, K::Mpv, {"cycle-values", "video-aspect-override", "16:9", "4:3", "2.35:1", "no"}, "aspect", false},
+        {"aspect", "video", QT_TRANSLATE_NOOP("Actions", "Next Aspect Ratio"), {"Ctrl+F6"}, {"A"}, K::Mpv, {"cycle-values", "video-aspect-override", "16:9", "4:3", "2.35:1", "no"}, "aspect", false},
         {"fill", "video", QT_TRANSLATE_NOOP("Actions", "Fill the Screen"), {"Ctrl+Return", "Ctrl+Enter"}, {}, K::Mpv, {"cycle-values", "panscan", "1", "0"}, "fill", false},
         {"rotate", "video", QT_TRANSLATE_NOOP("Actions", "Rotate"), {}, {}, K::Mpv, {"cycle-values", "video-rotate", "90", "180", "270", "0"}, "rotate", false},
         {"mirror", "video", QT_TRANSLATE_NOOP("Actions", "Mirror"), {"Ctrl+Z"}, {}, K::Mpv, {"vf", "toggle", "hflip"}, "mirror", false},
-        {"picture-reset", "video", QT_TRANSLATE_NOOP("Actions", "Reset Picture"), {"Q"}, {}, K::Player, {}, {}, false},
+        {"picture-reset", "video", QT_TRANSLATE_NOOP("Actions", "Picture Adjustments Off / Back"), {"Q"}, {}, K::Player, {}, {}, false},
         {"brightness-down", "video", QT_TRANSLATE_NOOP("Actions", "Darker"), {"W"}, {"3"}, K::Mpv, {"add", "brightness", "-1"}, "brightness", false},
         {"brightness-up", "video", QT_TRANSLATE_NOOP("Actions", "Brighter"), {"E"}, {"4"}, K::Mpv, {"add", "brightness", "1"}, "brightness", false},
         {"contrast-down", "video", QT_TRANSLATE_NOOP("Actions", "Less Contrast"), {"R"}, {"1"}, K::Mpv, {"add", "contrast", "-1"}, "contrast", false},

@@ -93,8 +93,8 @@ public:
     // Saves the current frame to the screenshot folder, or copies it.
     Q_INVOKABLE void screenshot(bool toClipboard = false);
     Q_INVOKABLE QString lastScreenshot() const { return m_lastScreenshot; }
-    // Brightness, contrast, saturation, aspect, fill, zoom, and rotation back
-    // to how the file looks.
+    // Brightness, contrast, saturation, hue, and gamma off; again, back to
+    // what they were.
     Q_INVOKABLE void resetPicture();
     Q_INVOKABLE void stop();
     Q_INVOKABLE void seekTo(double seconds, bool exact);
@@ -202,6 +202,7 @@ private:
     bool m_screenshotSubtitles = true;
     QString m_screenshotFormat = "png";
     QString m_lastScreenshot;
+    QVariantMap m_savedPicture;
     // What to go back to when something opened from the clipboard won't play.
     QString m_fallbackPath;
     double m_fallbackPosition = 0;
