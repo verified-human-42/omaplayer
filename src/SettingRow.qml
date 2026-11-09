@@ -39,8 +39,8 @@ Item {
     readonly property bool stacked: control.item !== null && entry.type !== "fact" && !binding
                                     && control.item.implicitWidth > room * 0.5
 
-    implicitHeight: stacked ? labels.implicitHeight + 10 + control.height + 22
-                            : Math.max(labels.implicitHeight, control.height) + 22
+    implicitHeight: stacked ? labels.implicitHeight + 8 + control.height + 14
+                            : Math.max(labels.implicitHeight, control.height) + 14
 
     // Arrow keys and h/l nudge the value; Space and Enter flip or advance it.
     function step(delta) {
@@ -135,10 +135,10 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: 16
         anchors.top: row.stacked ? parent.top : undefined
-        anchors.topMargin: 11
+        anchors.topMargin: 7
         anchors.verticalCenter: row.stacked ? undefined : parent.verticalCenter
         width: row.stacked ? row.room : row.room - control.width - 24
-        spacing: 3
+        spacing: 2
 
         Row {
             spacing: 6
@@ -154,7 +154,7 @@ Item {
                 id: title
                 text: row.entry.label || ""
                 color: row.ink
-                font.pixelSize: 13
+                font.pixelSize: 12
             }
             Label {
                 anchors.baseline: title.baseline
@@ -180,7 +180,7 @@ Item {
             width: parent.width
             text: row.entry.description || ""
             color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.6)
-            font.pixelSize: 12
+            font.pixelSize: 11
             wrapMode: Text.WordWrap
         }
 
@@ -197,7 +197,7 @@ Item {
     Loader {
         id: control
         x: row.stacked ? 16 : row.width - 16 - width
-        y: row.stacked ? labels.y + labels.height + 10 : (row.height - height) / 2
+        y: row.stacked ? labels.y + labels.height + 8 : (row.height - height) / 2
         width: item ? Math.min(item.implicitWidth, row.stacked ? row.room : row.room * 0.6) : 0
         height: item ? item.implicitHeight : 0
         sourceComponent: {

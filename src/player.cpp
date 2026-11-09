@@ -10,6 +10,7 @@
 #include <QGuiApplication>
 #include <QImage>
 #include <QLoggingCategory>
+#include <QRegularExpression>
 #include <QStandardPaths>
 #include <QThread>
 #include <QTimer>
@@ -219,6 +220,21 @@ void Player::loadStreamSupport() {
     if (m_streamSupport || !m_mpv)
         return;
     m_streamSupport = true;
+    // mpv before 0.42 opens YouTube streams too early for newer yt-dlp and
+    // gets 403s; OmaPlayer carries the script with the fix for those.
+    const QRegularExpressionMatch version = QRegularExpression(R"(v?(\d+)\.(\d+))").match(get("mpv-version").toString());
+    const bool fixed = version.hasMatch() && (version.captured(1).toInt() > 0 || version.captured(2).toInt() >= 42);
+    if (!fixed) {
+        const QString path = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)).filePath("omaplayer/ytdl_hook.lua");
+        QFile bundled(":/ytdl_hook.lua"), copy(path);
+        QDir().mkpath(QFileInfo(path).path());
+        if (bundled.open(QIODevice::ReadOnly) && copy.open(QIODevice::WriteOnly | QIODevice::Truncate)
+            && copy.write(bundled.readAll()) > 0) {
+            copy.close();
+            sendCommand({"load-script", path.toUtf8()});
+            return;
+        }
+    }
     sendCommand({"load-script", "@ytdl_hook.lua"});
 }
 

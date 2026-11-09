@@ -19,6 +19,7 @@
         <file alias="SettingField.qml">SettingField.qml</file>
         <file alias="SettingMenu.qml">SettingMenu.qml</file>
         <file alias="SubMenu.qml">SubMenu.qml</file>
+        <file alias="ytdl_hook.lua">ytdl_hook.lua</file>
         <file alias="SettingRow.qml">SettingRow.qml</file>
         <file alias="SettingsPage.qml">SettingsPage.qml</file>
         <file alias="ShortcutSheet.qml">ShortcutSheet.qml</file>

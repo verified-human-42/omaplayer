@@ -581,7 +581,7 @@ Popup {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            height: 40
+            height: 34
             color: page.shade(0.07)
 
             Row {
@@ -780,7 +780,7 @@ Popup {
 
                         Rectangle {
                             width: parent.width
-                            height: 32
+                            height: 28
                             radius: Math.max(8, theme.radius)
                             color: navGroup.selected ? theme.accent : navHover.hovered ? page.shade(0.08) : "transparent"
 
@@ -799,7 +799,7 @@ Popup {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: navGroup.modelData.title
                                 color: navGroup.selected ? theme.accentForeground : page.ink
-                                font.pixelSize: 13
+                                font.pixelSize: 12
                                 font.weight: navGroup.selected ? Font.DemiBold : Font.Normal
                             }
 
@@ -852,7 +852,7 @@ Popup {
                 Label {
                     text: page.query === "" ? page.pages[page.pageIndex].title : qsTr("Results for “%1”").arg(page.query.trim())
                     color: page.ink
-                    font.pixelSize: 24
+                    font.pixelSize: 20
                     font.weight: Font.DemiBold
                     bottomPadding: 14
                 }
@@ -879,13 +879,13 @@ Popup {
                         required property var modelData
 
                         width: content.width
-                        topPadding: 22
-                        spacing: 6
+                        topPadding: 16
+                        spacing: 4
 
                         Label {
                             text: group.modelData.title
                             color: page.ink
-                            font.pixelSize: 16
+                            font.pixelSize: 14
                             font.weight: Font.Bold
                         }
                         Rectangle {

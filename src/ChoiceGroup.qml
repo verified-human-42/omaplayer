@@ -13,7 +13,7 @@ Rectangle {
     signal picked(string next)
 
     implicitWidth: row.implicitWidth + 4
-    implicitHeight: 26
+    implicitHeight: 24
     radius: Math.max(6, theme.radius)
     color: "transparent"
     border.width: 1
@@ -33,7 +33,7 @@ Rectangle {
                 readonly property bool selected: String(modelData.value) === String(group.value)
 
                 implicitWidth: optionText.implicitWidth + 20
-                implicitHeight: 22
+                implicitHeight: 20
                 radius: Math.max(4, theme.radius - 2)
                 color: selected ? group.accent
                      : hover.hovered ? Qt.rgba(group.ink.r, group.ink.g, group.ink.b, 0.08) : "transparent"

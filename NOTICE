@@ -27,3 +27,8 @@ notice:
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
   SOFTWARE.
+
+src/ytdl_hook.lua is mpv's ytdl_hook.lua (v0.41.0) with upstream commit
+70894ae applied, LGPL-2.1-or-later, copyright the mpv contributors
+(https://github.com/mpv-player/mpv). OmaPlayer loads it only with mpv older
+than 0.42, which ships the same fix.

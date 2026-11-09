@@ -18,7 +18,7 @@ Rectangle {
     }
 
     implicitWidth: 220
-    implicitHeight: 28
+    implicitHeight: 24
     color: "transparent"
     radius: Math.max(6, theme.radius)
     border.width: 1
@@ -33,7 +33,7 @@ Rectangle {
         color: field.ink
         selectionColor: theme.accent
         selectedTextColor: theme.accentForeground
-        font.pixelSize: 12
+        font.pixelSize: 11
         clip: true
         text: field.value
         onEditingFinished: if (text !== field.value) field.committed(text)
@@ -67,6 +67,6 @@ Rectangle {
         visible: input.text === "" && !input.activeFocus
         text: field.placeholder
         color: Qt.rgba(field.ink.r, field.ink.g, field.ink.b, 0.4)
-        font.pixelSize: 12
+        font.pixelSize: 11
     }
 }

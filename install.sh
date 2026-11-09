@@ -65,11 +65,12 @@ done_message() {
   echo "omarchy-update keeps it up to date."
 }
 
-# The prebuilt package attached to the latest release. pacman pulls in mpv,
-# Qt, and anything else it needs from the Arch repositories.
+# The prebuilt package from the newest release that has one for this machine
+# (a release just published is still building its packages for a few
+# minutes). pacman pulls in mpv, Qt, and the rest from the Arch repositories.
 if [[ $mode == prebuilt ]]; then
   arch=$(uname -m)
-  url=$(curl -fsSL "https://api.github.com/repos/$repo/releases/latest" |
+  url=$(curl -fsSL "https://api.github.com/repos/$repo/releases?per_page=10" |
     grep -o "\"browser_download_url\": *\"[^\"]*/omaplayer-[0-9][^\"]*-$arch\.pkg\.tar\.zst\"" |
     grep -v -- '-debug-' | head -n1 | sed 's/.*"\(https[^"]*\)"$/\1/') || true
   if [[ -n $url ]]; then
@@ -83,14 +84,14 @@ if [[ $mode == prebuilt ]]; then
     done_message
     exit 0
   fi
-  echo "No prebuilt package for $arch in the latest release; building it instead."
+  echo "No prebuilt package for $arch yet; building it instead."
   mode=build
 fi
 
 # Building: makepkg and git, if this machine has never built a package.
 package=omaplayer
 [[ $mode == git ]] && package=omaplayer-git
-sudo pacman -S --needed --noconfirm base-devel git
+sudo pacman -S --needed --noconfirm base-devel git >/dev/null
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
@@ -99,6 +100,13 @@ make_way_for "$package"
 
 cd "$work"
 # -s installs what's needed to build, -i installs the result; the tests ran
-# when the release was made.
-makepkg -si --noconfirm --nocheck
+# when the release was made. The compiler's chatter goes to a log, shown
+# only when something fails; sudo still asks on the terminal.
+log="$work/build.log"
+echo "Building OmaPlayer. This takes a minute or two…"
+if ! makepkg -si --noconfirm --nocheck >"$log" 2>&1; then
+  echo "The build failed. The end of its log:" >&2
+  tail -n 30 "$log" >&2
+  exit 1
+fi
 done_message

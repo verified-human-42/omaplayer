@@ -24,7 +24,7 @@ Rectangle {
     }
 
     implicitWidth: 300
-    implicitHeight: 28
+    implicitHeight: 24
     color: hover.hovered ? Qt.rgba(ink.r, ink.g, ink.b, 0.05) : "transparent"
     radius: Math.max(6, theme.radius)
     border.width: 1
@@ -38,7 +38,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         text: picker.options.length > 0 ? picker.options[picker.current].label : ""
         color: picker.ink
-        font.pixelSize: 12
+        font.pixelSize: 11
         elide: Text.ElideRight
     }
     Label {
@@ -97,7 +97,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     text: option.modelData.label
                     color: option.index === picker.current ? theme.accent : picker.ink
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     font.bold: option.index === picker.current
                     elide: Text.ElideRight
                 }
