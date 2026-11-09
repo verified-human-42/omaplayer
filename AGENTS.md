@@ -44,7 +44,8 @@ src/translator.{h,cpp}   Omarchy language, followed live; catalogs in src/i18n/
 src/portalfilepicker.*   open dialogs through xdg-desktop-portal
 src/Main.qml             the window: layout, shortcuts, mouse, OSD wording
 src/*.qml                one component per file (ControlBar, SeekBar, Osd, IdleScreen,
-                         PlaylistPanel, PlaybackInfo, MasterMenu, ShortcutSheet, SettingsPage…)
+                         PlaylistPanel, PlaybackInfo, MasterMenu, ShortcutSheet, SettingsPage,
+                         GoToTime, Card…)
 src/resources.qrc        every QML file, icon, and catalog, compiled in
 tests/                   Qt Test suite, offscreen
 pkgbuild/                PKGBUILD, .desktop, icon
@@ -81,6 +82,18 @@ pkgbuild/                PKGBUILD, .desktop, icon
 - **Startup.** Menus, sheets, settings, the info panel, the playlist, and
   tooltips load on first use. mpv's built-in Lua scripts are off; the yt-dlp
   hook loads 1.5 s after launch, or at once when a URL is opened.
+- **One window.** The first instance listens on a local socket
+  (`omaplayer-<uid>`); later launches with files hand them over and exit,
+  unless Settings › Playback › One window is off.
+- **Screen awake.** While a video plays, `main.cpp` tags the window `noidle`
+  through hyprctl, which Omarchy's Hyprland rules turn into an idle inhibitor.
+  libmpv leaves this to the app, and D-Bus inhibits may be ignored by hypridle.
+- **Screenshots.** Through libmpv, mpv can't read back a hardware-decoded
+  frame, so with hwdec active `Player::screenshot` opens the same moment in a
+  short-lived software-only mpv on a thread and takes the picture there.
+- **Corner messages.** `Player::osd(kind)` names what changed; `Main.qml`'s
+  `showOsd` words it. Every kind reads mpv's value at that moment with
+  `player.get()`, so the message always matches what happened.
 
 ## Design language
 
@@ -89,6 +102,11 @@ pkgbuild/                PKGBUILD, .desktop, icon
   OSD, info panel, playlist, and idle screen. They're always the palette's darkest
   surface, even in light themes. Menus, sheets, and settings follow the theme
   as it is.
+- Corner messages and the Tab info panel are bare text on the picture,
+  outlined and shadowed in the stage colours, sized from the window height.
+- Boxes (menus, tooltips, dialogs, the shortcut sheet, the error banner) are
+  `Card`s, drawn like Omarchy's own popups: a 2px accent border, a near-solid
+  surface, Hyprland's rounding, bold text, no small caps.
 - The settings page copies OmaControl's layout: header strip with changed count
   and Undo all, a sidebar with search and section headers, framed cards, and a
   keycap footer. Colours are alphas over `theme.foreground` (0.04 sidebar,
@@ -108,6 +126,11 @@ pkgbuild/                PKGBUILD, .desktop, icon
    mpv's own log: `OMAPLAYER_MPV_LOG=v`. Extra mpv options: `OMAPLAYER_MPV_OPTIONS="a=b;c=d"`.
    A real frame, video included, without a screen capture tool:
    `OMAPLAYER_GRAB=shot.png:3000 build/omaplayer FILE` saves the window after 3 s and quits.
+   `OMAPLAYER_DO=info,screenshot:2000` runs actions after 2 s, as if their keys were pressed.
+   `XDG_CONFIG_HOME=/tmp/x` gives a run its own settings, and
+   `OMAPLAYER_THEME=/tmp/t` its own theme (with `/tmp/t/theme` linked to a
+   theme in `/usr/share/omarchy/themes`). Qt sends warnings to
+   the journal unless `QT_FORCE_STDERR_LOGGING=1`.
 5. `bin/install` builds and installs the package so it's in the launcher.
 
 ## OpenGL trap met here
@@ -124,3 +147,6 @@ while mpv's background still draws, which makes it look like a sizing bug.
 - JS objects in a Repeater model lose identity; compare rows by `key`.
 - `Qt.color()` doesn't exist; take `r/g/b` from a typed `color` property.
 - `theme.*` are strings; use a `color` property before reading `hslLightness`.
+- An `id` shadows a function of the same name in that file (`clock`).
+- mpv reads options back as nodes: `"no"` comes back as `false` (or `-2` for
+  `video-aspect-override`), so compare loosely.

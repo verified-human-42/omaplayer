@@ -79,7 +79,10 @@ int main(int argc, char *argv[]) {
     Translator translator;
     app.installTranslator(&translator);
 
-    Theme theme;
+    // For development: OMAPLAYER_THEME=DIR shows a theme without switching the
+    // desktop's. DIR is laid out like ~/.local/state/omarchy/current: the
+    // theme's folder (or a link to it) is DIR/theme.
+    Theme theme(qEnvironmentVariable("OMAPLAYER_THEME"));
     Player player;
     qCInfo(lcTiming, "mpv ready at %lld", QDateTime::currentMSecsSinceEpoch());
     Actions actions(&player);

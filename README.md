@@ -26,6 +26,10 @@ had, doesn't run here.
 - **Your hands already know it.** PotPlayer's keys, the right-click master menu,
   the docked bar, Tab for info, and the wheel for volume. The Linux classics
   (`Ctrl+,`, `Ctrl+Q`, `F11`) work too, and every key can be rebound.
+- **The PotPlayer toolbox, minus the bloat.** A-B repeat, go to time,
+  screenshots, brightness and contrast on the keyboard, audio sync, chapters,
+  a second subtitle for learning languages, and one window for every file you
+  open. No skins, no ads, no add-on store.
 - **Your theme is the skin.** Every color comes from your Omarchy theme, and it
   changes the moment you switch themes. Clean, keyboard-first, no chrome to spare.
 - **mpv speed, no compromise.** Hardware decoding, video drawn straight into the
@@ -82,12 +86,18 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | | |
 |---|---|
 | `Space` | Play / pause |
-| `←` `→` / `Ctrl+←` `Ctrl+→` | Seek 5 s / 30 s |
+| `←` `→` / `Ctrl+←` `Ctrl+→` | Seek 5 s / 30 s (both adjustable) |
+| `Ctrl+G` | Go to a time |
+| `[` `]` · `\` | A-B repeat: start, end · off |
 | `↑` `↓` · `M` | Volume · mute |
-| `PgUp` `PgDn` | Previous / next file |
+| `PgUp` `PgDn` · `Ctrl+PgUp` `Ctrl+PgDn` | Previous / next file · chapter |
 | `D` `F` | Previous / next frame |
 | `X` `C` `Z` | Slower / faster / normal speed |
+| `<` `>` | Audio earlier / later |
 | `,` `.` · `Alt+H` | Subtitles earlier / later · show or hide |
+| `Alt+↑` `Alt+↓` · `Alt+PgUp` `Alt+PgDn` | Subtitles up / down · bigger / smaller |
+| `W` `E` · `R` `T` · `Y` `U` · `Backspace` | Brightness · contrast · color · reset |
+| `Ctrl+E` · `Ctrl+C` | Save a screenshot · copy the frame |
 | `Enter` / `F11` · `Esc` | Fullscreen · leave it |
 | `Tab` | Playback info |
 | `F6` / `Ctrl+L` | Playlist |
@@ -97,7 +107,8 @@ Cyrillic, Greek, Hebrew, Arabic, Turkish, European, and more. It's tested on
 | `Q` / `Ctrl+Q` | Quit |
 
 Mouse: click to pause, double-click for fullscreen, wheel for volume,
-right-click for the menu, and click the clock to show time remaining.
+right-click for the menu (aspect ratio, rotate, repeat, and the rest live
+there), and click the clock to show time remaining.
 
 </details>
 
