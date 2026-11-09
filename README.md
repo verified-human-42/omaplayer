@@ -35,6 +35,8 @@ had, doesn't run here.
 
 ## Install
 
+Copy and paste this into a terminal:
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/install.sh | bash
 ```
