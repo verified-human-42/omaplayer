@@ -126,6 +126,7 @@ ApplicationWindow {
 
     // What each action reports in the corner, read after mpv has applied it.
     function showOsd(kind) {
+        osd.kind = kind;
         switch (kind) {
         case "pause":
             osd.show({ icon: player.paused ? "pause" : "play", value: player.paused ? qsTr("Paused") : qsTr("Playing") });
@@ -184,6 +185,13 @@ ApplicationWindow {
             if (kind === "resume")
                 where += (where === "" ? "" : "  ·  ") + qsTr("Resumed %1").arg(Format.time(player.position));
             osd.show({ icon: "play", label: where, value: mediaName(), duration: 3000 });
+            break;
+        // Moving the mouse over the picture shows what's playing, until the
+        // controls step aside.
+        case "hover":
+            osd.show({ icon: player.paused ? "pause" : "play",
+                       label: player.playlistCount > 1 ? (player.playlistPosition + 1) + " / " + player.playlistCount : "",
+                       value: mediaName(), duration: settings.values["interface/hideDelay"] * 1000 });
             break;
         case "clipboard-empty":
             osd.show({ label: qsTr("Clipboard"), value: qsTr("Nothing to open") });
@@ -270,6 +278,8 @@ ApplicationWindow {
 
             onPositionChanged: (mouse) => {
                 win.wake();
+                if (!player.idle && (!osd.showing || osd.kind === "hover" || osd.kind === "file"))
+                    win.showOsd("hover");
                 if (!pressed || dragged || win.fullscreen || !(mouse.buttons & Qt.LeftButton))
                     return;
                 if (Math.abs(mouse.x - pressPoint.x) + Math.abs(mouse.y - pressPoint.y) > 6) {

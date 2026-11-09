@@ -8,6 +8,10 @@ import QtQuick.Controls.impl
 Item {
     id: osd
 
+    // What the message is about ("volume", "file", …), so a newer one of
+    // another kind isn't replaced by the hover message.
+    property string kind
+    readonly property bool showing: card.opacity > 0
     property string icon
     property string label
     property string value
@@ -41,6 +45,7 @@ Item {
         id: card
         width: content.width + 2 * (osd.pad + border.width)
         height: 24 + 2 * (osd.pad + border.width)
+        fill: 0.72
         opacity: 0
         visible: opacity > 0
 
