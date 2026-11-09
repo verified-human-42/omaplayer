@@ -39,6 +39,8 @@ jobs:
             pacman-key --init
             pacman-key --populate archlinuxarm
           fi
+          # pacman's download sandbox needs kernel features CI containers lack.
+          sed -i '/^\[options\]/a DisableSandbox' /etc/pacman.conf
           pacman -Syu --noconfirm --needed git github-cli sudo
           useradd -m builder
           echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
