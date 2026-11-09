@@ -11,7 +11,7 @@ Popup {
     modal: true
     focus: true
     anchors.centerIn: Overlay.overlay
-    width: Math.min(parent ? parent.width - 48 : 900, 920)
+    width: Math.min(parent ? parent.width - 48 : 900, 1240)
     height: Math.min(parent ? parent.height - 48 : 700, body.implicitHeight + topPadding + bottomPadding)
     topPadding: 30
     bottomPadding: 20
@@ -42,7 +42,7 @@ Popup {
             GridLayout {
                 id: groups
                 Layout.fillWidth: true
-                columns: sheet.width > 700 ? 2 : 1
+                columns: sheet.width > 1050 ? 3 : sheet.width > 700 ? 2 : 1
                 columnSpacing: 36
                 rowSpacing: 18
 
