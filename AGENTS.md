@@ -149,7 +149,8 @@ pkgbuild/                PKGBUILD, .desktop, icon
    mpv's own log: `OMAPLAYER_MPV_LOG=v`. Extra mpv options: `OMAPLAYER_MPV_OPTIONS="a=b;c=d"`.
    A real frame, video included, without a screen capture tool:
    `OMAPLAYER_GRAB=shot.png:3000 build/omaplayer FILE` saves the window after 3 s and quits.
-   `OMAPLAYER_DO=info,screenshot:2000` runs actions after 2 s, as if their keys were pressed.
+   `OMAPLAYER_DO=info,screenshot:2000` runs actions after 2 s, as if their keys were pressed;
+   `menu@6000,next-subtitle@9000` times each one.
    `XDG_CONFIG_HOME=/tmp/x` gives a run its own settings, and
    `OMAPLAYER_THEME=/tmp/t` its own theme (with `/tmp/t/theme` linked to a
    theme in `/usr/share/omarchy/themes`). Qt sends warnings to

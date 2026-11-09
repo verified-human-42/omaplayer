@@ -157,13 +157,15 @@ int main(int argc, char *argv[]) {
     }, Qt::ConnectionType(Qt::DirectConnection | Qt::SingleShotConnection));
 
     // For development: OMAPLAYER_DO=id,id[:ms] runs actions from the table
-    // after ms (default 2000), as if their keys were pressed.
+    // after ms (default 2000), as if their keys were pressed; an id@ms runs
+    // that one at its own time ("menu@6000,next-subtitle@9000").
     if (const QString run = qEnvironmentVariable("OMAPLAYER_DO"); !run.isEmpty()) {
         const int after = run.section(':', 1, 1).isEmpty() ? 2000 : run.section(':', 1, 1).toInt();
-        QTimer::singleShot(after, &actions, [&actions, run] {
-            for (const auto &id : run.section(':', 0, 0).split(',', Qt::SkipEmptyParts))
-                actions.trigger(id);
-        });
+        for (const auto &item : run.section(':', 0, 0).split(',', Qt::SkipEmptyParts)) {
+            const QString id = item.section('@', 0, 0);
+            const int at = item.contains('@') ? item.section('@', 1, 1).toInt() : after;
+            QTimer::singleShot(at, &actions, [&actions, id] { actions.trigger(id); });
+        }
     }
 
     // For development: OMAPLAYER_GRAB=shot.png[:ms] saves what the window
