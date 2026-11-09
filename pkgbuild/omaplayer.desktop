@@ -2,7 +2,15 @@
 Type=Application
 Name=Omaplayer
 GenericName=Media Player
+GenericName[ko]=미디어 플레이어
+GenericName[ja]=メディアプレーヤー
+GenericName[zh_CN]=媒体播放器
+GenericName[zh_TW]=媒體播放器
 Comment=Play videos and music
+Comment[ko]=동영상과 음악 재생
+Comment[ja]=動画や音楽を再生します
+Comment[zh_CN]=播放视频和音乐
+Comment[zh_TW]=播放影片和音樂
 Exec=omaplayer %U
 Icon=omaplayer
 Terminal=false

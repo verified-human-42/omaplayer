@@ -1,3 +1,10 @@
 {
-  "%n settings changed": { "one": "%n setting changed", "other": "%n settings changed" }
+  "%n settings changed": {
+    "one": "%n setting changed",
+    "other": "%n settings changed"
+  },
+  "%n shortcuts changed from the layout.": {
+    "one": "%n shortcut changed from the layout.",
+    "other": "%n shortcuts changed from the layout."
+  }
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QSettings>
 #include <QStringList>
@@ -17,6 +18,7 @@ class Settings : public QObject {
     Q_OBJECT
     Q_PROPERTY(QVariantMap values READ values NOTIFY changed)
     Q_PROPERTY(QStringList changedKeys READ changedKeys NOTIFY changed)
+    Q_PROPERTY(int customBindings READ customBindings NOTIFY changed)
 
 public:
     struct Spec {
@@ -46,6 +48,19 @@ public:
 
     void applyAll();
 
+    // Omarchy's language, which subtitles follow until languages are set.
+    void setSystemLanguage(const QString &language);
+    static QString languageCodes(const QString &language);
+    static QString legacyCodepage(const QString &language);
+
+    // Key bindings. A key already bound elsewhere moves to this action; the
+    // id of the action it came from is returned so the page can say so.
+    Q_INVOKABLE QString bindKey(const QString &id, const QString &key);
+    Q_INVOKABLE void unbindKey(const QString &id, const QString &key);
+    Q_INVOKABLE void resetKeys(const QString &id);
+    Q_INVOKABLE void resetAllKeys();
+    int customBindings() const { return m_bindings.size(); }
+
 signals:
     void changed();
 
@@ -53,10 +68,13 @@ private:
     static const Spec *find(const QString &key);
     static QVariant normalize(const Spec &spec, const QVariant &value);
     void apply(const QString &key);
+    void storeBindings();
 
     std::unique_ptr<QSettings> m_store;
     Player *m_player;
     Actions *m_actions;
     QVariantMap m_values;
     QVariantMap m_session;
+    QHash<QString, QStringList> m_bindings;
+    QString m_language = "en";
 };

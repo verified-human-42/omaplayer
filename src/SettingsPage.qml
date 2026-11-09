@@ -12,6 +12,29 @@ Popup {
     property int pageIndex: 0
     property int rowIndex: -1
     property string query: ""
+    // The action whose key binding is listening for a key, and a line for
+    // the row it last changed ("Taken from Mute").
+    property string capturing: ""
+    property string noteFor: ""
+    property string noteText: ""
+
+    function startCapture(id) {
+        capturing = id;
+        noteFor = "";
+        body.forceActiveFocus();
+    }
+
+    function showNote(id, text) {
+        noteFor = text !== "" ? id : "";
+        noteText = text;
+        noteTimer.restart();
+    }
+
+    Timer {
+        id: noteTimer
+        interval: 4000
+        onTriggered: page.noteFor = ""
+    }
     readonly property color ink: theme.foreground
 
     function shade(alpha) {
@@ -104,7 +127,13 @@ Popup {
                               options: [{ value: "fuzzy", label: qsTr("Similar name") }, { value: "exact", label: qsTr("Same name") },
                                         { value: "no", label: qsTr("Off") }] },
                             { key: "subtitles/language", type: "text", label: qsTr("Preferred languages"),
-                              description: qsTr("Language codes in order, separated by commas."), placeholder: "en,es" },
+                              description: qsTr("Language codes in order, separated by commas. Empty follows Omarchy's language."),
+                              placeholder: settingsLanguageHint },
+                            { key: "subtitles/encoding", type: "choice", label: qsTr("Text encoding"),
+                              description: qsTr("Auto reads each subtitle file and works out how it was written. Pick one only if a file still comes out as gibberish."),
+                              options: [{ value: "auto", label: qsTr("Auto") }, { value: "utf-8", label: "UTF-8" },
+                                        { value: "japanese", label: qsTr("Japanese") }, { value: "chinese-simplified", label: qsTr("Chinese (Simplified)") },
+                                        { value: "chinese-traditional", label: qsTr("Chinese (Traditional)") }, { value: "korean", label: qsTr("Korean") }] },
                         ]
                     },
                     {
@@ -146,9 +175,31 @@ Popup {
                         ]
                     },
                     {
-                        title: qsTr("Keys"), note: qsTr("What each key does in this layout."),
-                        rows: actions.list.filter(function (entry) { return entry.keyLabels.length > 0; })
-                                          .map(function (entry) { return { type: "keys", label: entry.text, keys: entry.keyLabels }; })
+                        title: qsTr("Keys"), note: qsTr("Click + or press Enter, then the new key. Backspace removes the last one."),
+                        rows: [{ key: "action:reset-keys", type: "action", command: "resetAllKeys", button: qsTr("Reset all"),
+                                 label: qsTr("Your shortcuts"),
+                                 description: qsTr("%n shortcuts changed from the layout.", "", settings.customBindings) }]
+                              .concat(actions.list.map(function (entry) {
+                                  return { key: "binding:" + entry.id, type: "binding", actionId: entry.id, label: entry.text,
+                                           keys: entry.keys, labels: entry.keyLabels, custom: entry.custom };
+                              }))
+                    },
+                ]
+            },
+            {
+                id: "language", section: qsTr("Interface"), title: qsTr("Language"), icon: "language",
+                groups: [
+                    {
+                        title: qsTr("Language"), note: qsTr("The language of menus, messages, and settings."),
+                        rows: [
+                            { key: "radio:language:omarchy", type: "radio", setting: "interface/language", value: "omarchy",
+                              label: qsTr("Follow Omarchy"), description: qsTr("Whatever Omarchy is set to, switching along with it.") },
+                            { key: "radio:language:en", type: "radio", setting: "interface/language", value: "en", label: "English", description: "English" },
+                            { key: "radio:language:ko", type: "radio", setting: "interface/language", value: "ko", label: "한국어", description: "Korean" },
+                            { key: "radio:language:ja", type: "radio", setting: "interface/language", value: "ja", label: "日本語", description: "Japanese" },
+                            { key: "radio:language:zh-CN", type: "radio", setting: "interface/language", value: "zh-CN", label: "简体中文", description: "Chinese (Simplified)" },
+                            { key: "radio:language:zh-TW", type: "radio", setting: "interface/language", value: "zh-TW", label: "繁體中文", description: "Chinese (Traditional)" },
+                        ]
                     },
                 ]
             },
@@ -194,7 +245,7 @@ Popup {
         var list = [];
         groups.forEach(function (group) {
             group.rows.forEach(function (row) {
-                if (["switch", "choice", "level", "text"].indexOf(row.type) >= 0)
+                if (["switch", "choice", "level", "text", "binding", "action", "radio"].indexOf(row.type) >= 0)
                     list.push(row);
             });
         });
@@ -235,9 +286,31 @@ Popup {
     }
 
     function handleKey(event) {
+        // A binding that's listening takes the next key, whatever it is.
+        if (capturing !== "") {
+            event.accepted = true;
+            if (event.key === Qt.Key_Escape) {
+                capturing = "";
+                return;
+            }
+            var pressed = actions.sequence(event.key, event.modifiers, event.text);
+            if (pressed === "")
+                return;
+            var from = settings.bindKey(capturing, pressed);
+            showNote(capturing, from !== "" ? qsTr("Taken from %1").arg(actions.text(from)) : "");
+            capturing = "";
+            return;
+        }
         var alt = event.modifiers & Qt.AltModifier;
         var entry = rowIndex >= 0 && rowIndex < stops.length ? stops[rowIndex] : null;
         switch (event.key) {
+        case Qt.Key_Backspace:
+        case Qt.Key_Delete:
+            if (entry && entry.type === "binding" && entry.keys.length > 0)
+                settings.unbindKey(entry.actionId, entry.keys[entry.keys.length - 1]);
+            else
+                return;
+            break;
         case Qt.Key_Escape:
             if (query !== "")
                 goToPage(pageIndex);
@@ -301,6 +374,11 @@ Popup {
     modal: true
     focus: true
     closePolicy: Popup.NoAutoClose
+
+    onClosed: capturing = ""
+
+    // Placeholder for the subtitle languages: what an empty field follows.
+    readonly property string settingsLanguageHint: translator.language
 
     onOpened: {
         settings.beginSession();
@@ -686,6 +764,9 @@ Popup {
                                             id: settingRow
                                             width: parent.width
                                             entry: rowHolder.modelData
+                                            capturing: page.capturing !== "" && page.capturing === (rowHolder.modelData.actionId || "")
+                                            note: page.noteFor !== "" && page.noteFor === (rowHolder.modelData.actionId || "") ? page.noteText : ""
+                                            onCaptureRequested: page.startCapture(rowHolder.modelData.actionId)
                                             current: page.rowIndex >= 0 && page.rowIndex < page.stops.length
                                                      && (rowHolder.modelData.key || "") !== ""
                                                      && page.stops[page.rowIndex].key === rowHolder.modelData.key

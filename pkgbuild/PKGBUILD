@@ -4,8 +4,9 @@ pkgrel=1
 pkgdesc='Omarchy-native media player built on mpv'
 arch=('x86_64' 'aarch64')
 license=('GPL-3.0-only')
-depends=('mpv' 'qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-svg' 'xdg-desktop-portal')
-optdepends=('yt-dlp: play stream URLs')
+depends=('mpv' 'qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-svg' 'xdg-desktop-portal' 'hicolor-icon-theme')
+optdepends=('yt-dlp: play stream URLs'
+            'noto-fonts-cjk: Chinese, Japanese, and Korean file names and subtitles')
 makedepends=('gcc' 'make' 'pkgconf')
 source=()
 sha256sums=()

@@ -30,6 +30,7 @@
         <file alias="icons/fullscreen.svg">icons/fullscreen.svg</file>
         <file alias="icons/info.svg">icons/info.svg</file>
         <file alias="icons/keyboard.svg">icons/keyboard.svg</file>
+        <file alias="icons/language.svg">icons/language.svg</file>
         <file alias="icons/menu.svg">icons/menu.svg</file>
         <file alias="icons/next.svg">icons/next.svg</file>
         <file alias="icons/open.svg">icons/open.svg</file>
@@ -48,5 +49,9 @@
         <file alias="icons/volume.svg">icons/volume.svg</file>
         <file alias="icons/omaplayer.svg">../pkgbuild/omaplayer.svg</file>
         <file alias="i18n/en.json">i18n/en.json</file>
+        <file alias="i18n/ja.json">i18n/ja.json</file>
+        <file alias="i18n/ko.json">i18n/ko.json</file>
+        <file alias="i18n/zh-CN.json">i18n/zh-CN.json</file>
+        <file alias="i18n/zh-TW.json">i18n/zh-TW.json</file>
     </qresource>
 </RCC>

@@ -1,0 +1,41 @@
+# Maintainer: Joseph <263787421+verified-human-42@users.noreply.github.com>
+pkgname=omaplayer
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Omarchy-native media player built on mpv'
+arch=('x86_64' 'aarch64')
+url='https://github.com/verified-human-42/omaplayer'
+license=('GPL-3.0-only')
+depends=('mpv' 'qt6-base' 'qt6-declarative' 'qt6-wayland' 'qt6-svg' 'xdg-desktop-portal' 'hicolor-icon-theme')
+makedepends=('pkgconf')
+checkdepends=('ffmpeg')
+optdepends=('yt-dlp: play stream URLs'
+            'noto-fonts-cjk: Chinese, Japanese, and Korean file names and subtitles')
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "$pkgname-$pkgver"
+  mkdir -p build
+  cd build
+  qmake6 ../omaplayer.pro
+  make
+}
+
+check() {
+  cd "$pkgname-$pkgver"
+  mkdir -p build/tests
+  cd build/tests
+  qmake6 ../../tests/omaplayer_tests.pro
+  make
+  QT_QPA_PLATFORM=offscreen ./omaplayer_tests
+}
+
+package() {
+  cd "$pkgname-$pkgver"
+  install -Dm755 build/omaplayer "$pkgdir/usr/bin/omaplayer"
+  install -Dm644 pkgbuild/omaplayer.desktop "$pkgdir/usr/share/applications/omaplayer.desktop"
+  install -Dm644 pkgbuild/omaplayer.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/omaplayer.svg"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 NOTICE "$pkgdir/usr/share/licenses/$pkgname/NOTICE"
+}

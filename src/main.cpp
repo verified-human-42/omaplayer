@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
     qCInfo(lcTiming, "app created at %lld", QDateTime::currentMSecsSinceEpoch());
     app.setApplicationName("omaplayer");
     app.setOrganizationName("omaplayer");
-    app.setApplicationVersion("0.1.0");
+    app.setApplicationVersion(OMAPLAYER_VERSION);
 
     // Matches the window to omaplayer.desktop, so the compositor (Wayland
     // app_id) and the launcher pick up the installed icon.
@@ -60,7 +60,17 @@ int main(int argc, char *argv[]) {
     // Preferences go to mpv before the first file opens. Volume and mute
     // carry over between runs; positions are per file and kept by mpv.
     Settings settings(&player, &actions);
+    // The language picked in settings, if any, wins over Omarchy's.
+    auto followLanguage = [&] {
+        const QString chosen = settings.value("interface/language").toString();
+        translator.setOverride(chosen == "omarchy" ? QString() : chosen);
+    };
+    followLanguage();
+    QObject::connect(&settings, &Settings::changed, &translator, followLanguage);
+    settings.setSystemLanguage(translator.language());
     settings.applyAll();
+    QObject::connect(&translator, &Translator::changed, &settings,
+                     [&] { settings.setSystemLanguage(translator.language()); });
     player.set("volume", settings.store().value("state/volume", 100).toDouble());
     player.set("mute", settings.store().value("state/mute", false).toBool());
     QObject::connect(&app, &QCoreApplication::aboutToQuit, [&] {

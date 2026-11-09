@@ -5,11 +5,18 @@ PKGCONFIG += mpv
 TARGET = omaplayer
 TEMPLATE = app
 
+# The one place the version lives; bin/release bumps it.
+VERSION = 0.1.0
+DEFINES += OMAPLAYER_VERSION=\\\"$$VERSION\\\"
+
 HEADERS += \
     src/actions.h \
     src/filepicker.h \
     src/player.h \
     src/portalfilepicker.h \
+    src/sami.h \
+    src/subtitles.h \
+    src/textencoding.h \
     src/settings.h \
     src/theme.h \
     src/timing.h \
@@ -21,6 +28,9 @@ SOURCES += \
     src/actions.cpp \
     src/player.cpp \
     src/portalfilepicker.cpp \
+    src/sami.cpp \
+    src/subtitles.cpp \
+    src/textencoding.cpp \
     src/settings.cpp \
     src/theme.cpp \
     src/translator.cpp \

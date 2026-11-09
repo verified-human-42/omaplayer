@@ -93,6 +93,15 @@ public:
     void setVideoReady();
     // Opening a single local file queues the rest of its folder around it.
     void setFolderPlaylist(bool enabled) { m_folderPlaylist = enabled; }
+
+    // Subtitle files beside a video are found and decoded here, not by mpv,
+    // so any encoding reads right. mode: "fuzzy", "exact", or "no"; encoding:
+    // a codepage to force, or empty to tell it from the text.
+    void setSubtitleMode(const QString &mode) { m_subtitleMode = mode; }
+    void setSubtitleEncoding(const QString &encoding) { m_subtitleEncoding = encoding; }
+    void setLanguage(const QString &language) { m_language = language; }
+    // Adds subtitle files to what's playing; the first is shown.
+    Q_INVOKABLE void addSubtitles(const QStringList &paths, bool select = true);
     QStringList folderOf(const QString &path) const;
 
 signals:
@@ -126,6 +135,7 @@ private:
     void load(const QStringList &paths);
     void setOpening(bool opening);
     void loadStreamSupport();
+    void loadSubtitles();
     static QStringList normalize(const QVariantList &items);
 
     mpv_handle *m_mpv = nullptr;
@@ -135,6 +145,9 @@ private:
     bool m_videoReady = false;
     bool m_folderPlaylist = true;
     bool m_streamSupport = false;
+    QString m_subtitleMode = "fuzzy";
+    QString m_subtitleEncoding;
+    QString m_language = "en";
     QStringList m_waiting;
     double m_margins[4] = {0, 0, 0, 0};
 

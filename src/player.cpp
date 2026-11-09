@@ -14,6 +14,7 @@
 
 #include <mpv/client.h>
 
+#include "subtitles.h"
 #include "timing.h"
 
 namespace {
@@ -147,10 +148,12 @@ Player::Player(Output output, QObject *parent) : QObject(parent), m_videoReady(o
     option("audio-client-name", "omaplayer");
     option("volume-max", "100");
 
-    // Subtitles that share the file's name load with it. The folder playlist
-    // is built here rather than by mpv's autocreate-playlist, which starts the
-    // file, swaps in the folder, and starts it again.
-    option("sub-auto", "fuzzy");
+    // Subtitle files are found and decoded to UTF-8 here (loadSubtitles), so
+    // mpv neither looks for them nor guesses their encoding. The folder
+    // playlist is built here too rather than by mpv's autocreate-playlist,
+    // which starts the file, swaps in the folder, and starts it again.
+    option("sub-auto", "no");
+    option("sub-codepage", "utf-8");
     // Subtitles stay on the picture, never in the strip the docked bar covers.
     option("sub-use-margins", "no");
 
@@ -248,6 +251,7 @@ void Player::handleEvent(const mpv_event &event) {
         qCInfo(lcTiming, "file loaded at %lld", QDateTime::currentMSecsSinceEpoch());
         setOpening(false);
         clearError();
+        loadSubtitles();
         refresh("position");
         emit fileLoaded();
         if (m_position > 1)
@@ -383,7 +387,59 @@ QStringList Player::normalize(const QVariantList &items) {
 }
 
 void Player::open(const QVariantList &items) {
-    openPaths(normalize(items));
+    // Subtitle files dropped or opened while something plays join it rather
+    // than replace it.
+    QStringList media, subtitles;
+    for (const auto &path : normalize(items))
+        (Subtitles::isSubtitle(path) ? subtitles : media).append(path);
+    if (media.isEmpty() && !subtitles.isEmpty() && !m_idle) {
+        addSubtitles(subtitles);
+        return;
+    }
+    openPaths(media);
+}
+
+void Player::loadSubtitles() {
+    if (m_path.isEmpty() || m_path.contains("://"))
+        return;
+    addSubtitles(Subtitles::besides(m_path, m_subtitleMode), false);
+}
+
+void Player::addSubtitles(const QStringList &paths, bool select) {
+    const QString cache = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation)).filePath("omaplayer/subtitles");
+    QList<Subtitles::Track> tracks;
+    for (const auto &path : paths)
+        tracks += Subtitles::prepare(path, m_subtitleEncoding, m_language, cache);
+    if (tracks.isEmpty())
+        return;
+
+    // Shown: the first in a preferred language; failing that, the first one,
+    // unless mpv already shows a subtitle (one of the file's own, say).
+    QStringList preferred;
+    for (const auto &code : get("slang").toList())
+        preferred.append(code.toString().toLower());
+    auto wanted = [&](const QString &language) {
+        const QString code = language.toLower();
+        if (code.isEmpty())
+            return false;
+        for (const auto &want : preferred)
+            if (want == code || want.startsWith(code + "-") || code.startsWith(want + "-") || code.section('-', 0, 0) == want)
+                return true;
+        return false;
+    };
+    qsizetype shown = -1;
+    for (qsizetype i = 0; i < tracks.size() && shown < 0; ++i)
+        if (wanted(tracks[i].language))
+            shown = i;
+    const QVariant current = get("sid");
+    if (shown < 0 && (select || !current.isValid() || current.toString() == "no" || current.toBool() == false))
+        shown = 0;
+
+    for (qsizetype i = 0; i < tracks.size(); ++i)
+        sendCommand({"sub-add", tracks[i].path.toUtf8(), i == shown ? "select" : "auto",
+                     tracks[i].title.toUtf8(), tracks[i].language.toUtf8()});
+    if (select)
+        emit osd("subtitle");
 }
 
 void Player::append(const QVariantList &items) {

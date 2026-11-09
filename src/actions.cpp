@@ -19,11 +19,14 @@ const char *groupText(const QString &group) {
 QString translated(const char *text) {
     return QCoreApplication::translate("Actions", text);
 }
+}
 
 // Keys as they're printed on the keyboard: arrows as arrows, either Enter as
 // Enter, and modifiers spelled the platform's way.
-QString keyLabel(const QString &key) {
-    QString label = QKeySequence(key).toString(QKeySequence::NativeText);
+QString Actions::keyLabel(const QString &key) {
+    // Portable text: the native one runs key names through the app's catalog,
+    // and a catalog that translates "Left" turns the keycap into a word.
+    QString label = QKeySequence(key).toString(QKeySequence::PortableText);
     static const QList<QPair<QString, QString>> glyphs = {
         {"Left", "←"}, {"Right", "→"}, {"Up", "↑"}, {"Down", "↓"}, {"Return", "Enter"},
     };
@@ -31,7 +34,6 @@ QString keyLabel(const QString &key) {
         if (label == name || label.endsWith("+" + name))
             label = label.left(label.size() - name.size()) + glyph;
     return label;
-}
 }
 
 Actions::Actions(Player *player, QObject *parent) : QObject(parent), m_player(player) {}
@@ -99,10 +101,51 @@ void Actions::setKeymap(const QString &keymap) {
     emit changed();
 }
 
+void Actions::setOverrides(const QHash<QString, QStringList> &overrides) {
+    if (overrides == m_overrides)
+        return;
+    m_overrides = overrides;
+    emit changed();
+}
+
+QStringList Actions::keys(const QString &id) const {
+    if (m_overrides.contains(id))
+        return m_overrides.value(id);
+    for (const auto &spec : specs())
+        if (spec.id == id)
+            return keysFor(spec, m_keymap);
+    return {};
+}
+
+QString Actions::idForKey(const QString &key) const {
+    const QString wanted = QKeySequence(key).toString(QKeySequence::PortableText);
+    for (const auto &spec : specs())
+        for (const auto &bound : keys(spec.id))
+            if (QKeySequence(bound).toString(QKeySequence::PortableText) == wanted)
+                return spec.id;
+    return {};
+}
+
+QString Actions::sequence(int key, int modifiers, const QString &text) {
+    switch (key) {
+    case Qt::Key_Control: case Qt::Key_Shift: case Qt::Key_Alt: case Qt::Key_Meta:
+    case Qt::Key_AltGr: case Qt::Key_Super_L: case Qt::Key_Super_R: case Qt::Key_unknown:
+        return {};
+    default:
+        break;
+    }
+    auto mods = Qt::KeyboardModifiers(modifiers) & (Qt::ControlModifier | Qt::ShiftModifier | Qt::AltModifier | Qt::MetaModifier);
+    // A symbol typed with Shift ("?", "<") is that symbol, the way the
+    // built-in layouts write it, not Shift plus the symbol.
+    if (text.size() == 1 && !text.at(0).isLetterOrNumber() && text.at(0).isPrint() && !text.at(0).isSpace())
+        mods &= ~Qt::ShiftModifier;
+    return QKeySequence(QKeyCombination(mods, Qt::Key(key))).toString(QKeySequence::PortableText);
+}
+
 QVariantList Actions::list() const {
     QVariantList list;
     for (const auto &spec : specs()) {
-        const QStringList keys = keysFor(spec, m_keymap);
+        const QStringList keys = this->keys(spec.id);
         QStringList labels;
         for (const auto &key : keys) {
             const QString label = keyLabel(key);
@@ -115,6 +158,7 @@ QVariantList Actions::list() const {
             {"text", translated(spec.text)},
             {"keys", keys},
             {"keyLabels", labels},
+            {"custom", m_overrides.contains(spec.id)},
         });
     }
     return list;
@@ -133,12 +177,8 @@ QVariantList Actions::groups() const {
 }
 
 QString Actions::shortcut(const QString &id) const {
-    for (const auto &spec : specs())
-        if (spec.id == id) {
-            const QStringList keys = keysFor(spec, m_keymap);
-            return keys.isEmpty() ? QString() : keyLabel(keys.first());
-        }
-    return {};
+    const QStringList bound = keys(id);
+    return bound.isEmpty() ? QString() : keyLabel(bound.first());
 }
 
 QString Actions::text(const QString &id) const {

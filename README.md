@@ -21,17 +21,64 @@ Omarchy theme live.
 - **The folder is the playlist.** Open one episode and the rest of the season
   queues around it, in natural order.
 - **Picks up where you left off**, per file.
+- **Subtitles that never come out as gibberish.** See below.
+- **Speaks your language**: English, 한국어, 日本語, 简体中文, and 繁體中文, following
+  Omarchy or picked in Settings.
+
+## Smart subtitles
+
+Most subtitle files in the wild were saved on Windows in their language's old
+codepage, and every player that guesses the encoding gets some of them wrong:
+short files, mixed scripts, the lot. Omaplayer doesn't guess.
+
+- **It reads every file and works out the encoding from the text itself.** Every
+  common codepage gets a try (Korean CP949, Japanese Shift-JIS, Chinese GB18030
+  and Big5, Cyrillic, Greek, Hebrew, Arabic, Turkish, Central and Western
+  European, and more), and the one whose text reads like real language wins: real
+  syllables, real characters, real letter pairs. UTF-8 and UTF-16, with or
+  without a byte-order mark, are recognised first.
+- **It's tested to the word.** 70+ real subtitle lines in 15 encodings, down to
+  `네`, `はい` and `谢谢你`, all decoded right with no hint at all.
+- **SMI files get every language.** A Korean `.smi` usually carries Korean and
+  English together (`KRCC`, `ENCC`). Other players mash them into one track or
+  silently drop one; Omaplayer gives each language its own track, named the way
+  the file names it.
+- **The right track comes up first**: the one in your language, then whatever
+  the file offers.
+- **Drop a subtitle on the window** to add it to what's playing.
+- **Any format**: SRT, SMI, ASS/SSA, VTT, SUB, and image subtitles (IDX, SUP).
+
+### CJK subtitles
+
+- 한글 자막 지원됩니다. SMI 한/영 통합 자막도 언어별로 나뉘어요.
+- 日本語字幕に対応しています。Shift-JIS の古い字幕もそのまま読めます。
+- 支持简体中文字幕，GB18030 / GBK 编码的旧字幕也能正确显示。
+- 支援繁體中文字幕，Big5 編碼的舊字幕也能正確顯示。
+
+Glyphs follow `omarchy font cjk`. If a file is ever still garbled, Settings ›
+Subtitles › Text encoding forces one.
 
 ## Install
 
+From the AUR, like any other package on Omarchy:
+
 ```sh
+yay -S omaplayer        # the latest release
+yay -S omaplayer-git    # or the latest from main
+```
+
+Or build it from this repository:
+
+```sh
+git clone https://github.com/verified-human-42/omaplayer
+cd omaplayer
 bin/install
 ```
 
-This builds the package with `makepkg` and installs it, so Omaplayer shows up
-in the app launcher (`Super + Space`). It needs `mpv`, Qt 6 (`qt6-base`,
-`qt6-declarative`, `qt6-wayland`, `qt6-svg`), and `xdg-desktop-portal`, all
-part of Omarchy. Install `yt-dlp` to play stream URLs.
+Either way Omaplayer shows up in the app launcher (`Super + Space`). It needs
+`mpv`, Qt 6 (`qt6-base`, `qt6-declarative`, `qt6-wayland`, `qt6-svg`), and
+`xdg-desktop-portal`, all part of Omarchy. Install `yt-dlp` to play stream
+URLs, and `noto-fonts-cjk` for Chinese, Japanese, and Korean text.
 
 ## Use
 
@@ -69,6 +116,7 @@ Or drop files on the window, or paste a path or URL with `Ctrl+V`.
 | Exit Fullscreen | `Esc` | `Esc` |
 | Playback Info | `Tab` / `Ctrl+I` | `I` |
 | Settings | `F5` / `Ctrl+,` | `Ctrl+,` |
+| *Your own* | Settings › Keyboard: click `+`, press the key | |
 | Keyboard Shortcuts | `?` / `F1` / `Ctrl+/` | `?` / `F1` |
 
 Everything else, including Stop, Shuffle, and track switching, is in the
@@ -107,6 +155,16 @@ QT_LOGGING_RULES="omaplayer.timing.info=true" build/omaplayer FILE   # startup t
 ```
 
 See `AGENTS.md` for how the pieces fit.
+
+### Releasing
+
+```sh
+bin/release 0.2.0
+```
+
+Sets the version, runs the tests, tags, publishes the GitHub release, and points
+`packaging/aur/omaplayer` at the new tarball with its checksum. Then push each
+folder under `packaging/aur/` to its AUR repository.
 
 ## License
 

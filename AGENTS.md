@@ -35,7 +35,10 @@ src/main.cpp             app setup; hands C++ objects to QML
 src/player.{h,cpp}       the libmpv handle: state as properties, async commands, folder playlist
 src/videorenderer.{h,cpp} draws mpv into the window's own framebuffer, under the QML scene
 src/actions.{h,cpp}      the action table: every action, both keymaps, menu groups
-src/settings.{h,cpp}     preferences: stored, applied to mpv, undoable per session
+src/settings.{h,cpp}     preferences: stored, applied to mpv, undoable per session; key bindings
+src/textencoding.{h,cpp} subtitle bytes → text: BOM/UTF-8/UTF-16, then every legacy codepage scored
+src/subtitles.{h,cpp}    finds subtitle files beside a video, decodes them to UTF-8 in the cache
+src/sami.{h,cpp}         SMI files: one SRT per language class (KRCC, ENCC, …)
 src/theme.{h,cpp}        Omarchy palette + Hyprland rounding, followed live
 src/translator.{h,cpp}   Omarchy language, followed live; catalogs in src/i18n/
 src/portalfilepicker.*   open dialogs through xdg-desktop-portal
@@ -64,6 +67,17 @@ pkgbuild/                PKGBUILD, .desktop, icon
 - **Settings.** Add a `Spec` in `Settings::specs()`, apply it in
   `Settings::apply()` (or read it from QML via `settings.values[key]`), and add
   a row on the matching page in `SettingsPage.qml`.
+- **Subtitles.** mpv never looks for or decodes subtitle files (`sub-auto=no`,
+  `sub-codepage=utf-8`). On `FILE_LOADED`, `Player::loadSubtitles` finds them
+  (`Subtitles::besides`), `Subtitles::prepare` decodes each with
+  `TextEncoding::decode` (SMI through `Sami::convert`) into
+  `~/.cache/omaplayer/subtitles`, and they're added with `sub-add`, the one in
+  the preferred language selected. The detector's tests are the spec: add a
+  row to `encodingsAreDetected` for any file that ever decodes wrong.
+  `OMAPLAYER_DEBUG_ENCODING=1` prints every candidate's score.
+- **Language.** `Translator` follows Omarchy's language unless Settings ›
+  Language overrides it (`interface/language`); subtitle preferences follow
+  whichever is in effect. Catalogs: `src/i18n/<code>.json`, keyed by English.
 - **Startup.** Menus, sheets, settings, the info panel, the playlist, and
   tooltips load on first use. mpv's built-in Lua scripts are off; the yt-dlp
   hook loads 1.5 s after launch, or at once when a URL is opened.

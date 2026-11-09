@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QHash>
 #include <QObject>
 #include <QStringList>
 #include <QVariantList>
@@ -42,6 +43,14 @@ public:
     QString keymap() const { return m_keymap; }
     void setKeymap(const QString &keymap);
 
+    // Keys the user chose for an action, replacing the layout's.
+    void setOverrides(const QHash<QString, QStringList> &overrides);
+    QStringList keys(const QString &id) const;
+    QString idForKey(const QString &key) const;
+    static QString keyLabel(const QString &key);
+    // A key press as a portable sequence ("Ctrl+L"), or empty for a lone modifier.
+    Q_INVOKABLE static QString sequence(int key, int modifiers, const QString &text);
+
     Q_INVOKABLE void trigger(const QString &id);
     Q_INVOKABLE QString shortcut(const QString &id) const;
     Q_INVOKABLE QString text(const QString &id) const;
@@ -53,4 +62,5 @@ signals:
 private:
     Player *m_player;
     QString m_keymap = "omaplayer";
+    QHash<QString, QStringList> m_overrides;
 };
