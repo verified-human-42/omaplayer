@@ -210,10 +210,12 @@ void Settings::apply(const QString &key) {
     else if (key == "video/deinterlace")
         m_player->set("deinterlace", value.toBool() ? "auto" : "no");
     else if (key == "video/streamQuality") {
-        // The tallest picture yt-dlp fetches; the best there is when none.
+        // The tallest picture yt-dlp fetches, in VP9 or H.264 over AV1:
+        // many graphics cards can't decode AV1, and software decoding drops
+        // frames. "Best" takes whatever is best.
         const QString height = value.toString();
         m_player->set("ytdl-format", height == "best" ? QString("bestvideo+bestaudio/best")
-                                   : QString("bestvideo[height<=?%1]+bestaudio/best[height<=?%1]/best").arg(height));
+                                   : QString("bestvideo[height<=?%1][vcodec!^=av01]+bestaudio/bestvideo[height<=?%1]+bestaudio/best[height<=?%1]/best").arg(height));
     }
     else if (key.startsWith("video/screenshot")) {
         const QString folder = m_values.value("video/screenshotFolder").toString();

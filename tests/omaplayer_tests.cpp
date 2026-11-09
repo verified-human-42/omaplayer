@@ -522,7 +522,7 @@ private slots:
         expect("deinterlace", "false");
         expect("sub-pos", "100");
         expect("sub-font", "sans-serif");
-        expect("ytdl-format", "bestvideo[height<=?1080]+bestaudio/best[height<=?1080]/best");
+        expect("ytdl-format", "bestvideo[height<=?1080][vcodec!^=av01]+bestaudio/bestvideo[height<=?1080]+bestaudio/best[height<=?1080]/best");
 
         settings.set("playback/atEnd", "clear");
         settings.set("playback/exactSeek", true);
@@ -536,7 +536,7 @@ private slots:
         expect("keep-open", "false");
         expect("hr-seek", "true");
         expect("deinterlace", "auto");
-        expect("ytdl-format", "bestvideo[height<=?720]+bestaudio/best[height<=?720]/best");
+        expect("ytdl-format", "bestvideo[height<=?720][vcodec!^=av01]+bestaudio/bestvideo[height<=?720]+bestaudio/best[height<=?720]/best");
         expect("audio-spdif", "ac3,eac3,dts,dts-hd,truehd");
         settings.set("audio/surround", "stereo");
         expect("audio-channels", "stereo");
