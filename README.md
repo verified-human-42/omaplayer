@@ -39,10 +39,11 @@ had, doesn't run here.
 curl -fsSL https://raw.githubusercontent.com/verified-human-42/omaplayer/main/install.sh | bash
 ```
 
-It builds the latest release as a regular pacman package, and Omaplayer shows up
-in the launcher. Run it again to update; `sudo pacman -R omaplayer` removes it.
-For the latest from `main`, add `-s -- --git`. A prebuilt package is on every
-[release](https://github.com/verified-human-42/omaplayer/releases/latest).
+It installs the prebuilt package from the
+[latest release](https://github.com/verified-human-42/omaplayer/releases/latest) with
+pacman, so there's nothing to compile, and Omaplayer shows up in the launcher. Run
+it again to update; `sudo pacman -R omaplayer` removes it. To compile instead,
+add `-s -- --build` (the release) or `-s -- --git` (the latest from `main`).
 
 ## Smart subtitles
 
