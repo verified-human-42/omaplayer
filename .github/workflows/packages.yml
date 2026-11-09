@@ -53,7 +53,8 @@ jobs:
         run: |
           chown -R builder .
           cd pkgbuild
-          sudo -u builder MAKEFLAGS="-j$(nproc)" makepkg -s --noconfirm
+          # Arch Linux ARM defaults to .pkg.tar.xz; one name for every architecture.
+          sudo -u builder MAKEFLAGS="-j$(nproc)" PKGEXT=.pkg.tar.zst makepkg -s --noconfirm
 
       - name: Attach it to the release
         run: |
