@@ -1,5 +1,5 @@
 pkgname=omaplayer
-pkgver=0.9.0
+pkgver=0.9.1
 pkgrel=1
 pkgdesc='Omarchy-native media player built on mpv'
 arch=('x86_64' 'aarch64')
