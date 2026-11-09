@@ -2,9 +2,10 @@
 # Cuts a release: bin/release 0.1.0
 #
 # Sets the version everywhere, runs the tests, tags and pushes, publishes the
-# GitHub release, points packaging/omaplayer (what install.sh builds) at the
-# release tarball with its checksum, and attaches a prebuilt package to the
-# release for `sudo pacman -U`.
+# GitHub release, and points packaging/omaplayer (what install.sh --build
+# compiles) at the release tarball with its checksum. Publishing the release
+# starts .github/workflows/packages.yml, which builds the x86_64 and aarch64
+# packages and attaches them.
 set -eu
 
 VERSION=${1:?usage: bin/release VERSION}
@@ -33,11 +34,6 @@ sed -i "s/^sha256sums=.*/sha256sums=('$SUM')/" packaging/omaplayer/PKGBUILD
 git commit -qam "Point the package at v$VERSION"
 git push -q origin main
 
-# A prebuilt package on the release, built from that same tarball.
-WORK=$(mktemp -d)
-trap 'rm -rf "$WORK"' EXIT
-cp packaging/omaplayer/PKGBUILD "$WORK/"
-(cd "$WORK" && makepkg -f --noconfirm >/dev/null)
-gh release upload "v$VERSION" "$WORK"/omaplayer-"$VERSION"-*.pkg.tar.zst
+echo "Packages for x86_64 and aarch64 are building: gh run watch"
 
 echo "Released v$VERSION."
