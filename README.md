@@ -15,6 +15,24 @@
 
 </div>
 
+## Why Omaplayer
+
+Haruna and Celluloid are decent, but they don't look like Omarchy. Plain mpv is
+fast but bare. And PotPlayer, with the best interface and keys any player ever
+had, doesn't run here.
+
+**So Omaplayer takes PotPlayer's hands, gives it Omarchy's face, and runs on mpv.**
+
+- **Your hands already know it.** PotPlayer's keys, the right-click master menu,
+  the docked bar, Tab for info, and the wheel for volume. The Linux classics
+  (`Ctrl+,`, `Ctrl+Q`, `F11`) work too, and every key can be rebound.
+- **Your theme is the skin.** Every color comes from your Omarchy theme, and it
+  changes the moment you switch themes. Clean, keyboard-first, no chrome to spare.
+- **mpv speed, no compromise.** Hardware decoding, video drawn straight into the
+  window, folder playlists, resume where you left off, and YouTube by URL.
+- **Subtitles never come out garbled.** Any encoding, any language. See below.
+- **Speaks your language:** English, 한국어, 日本語, 简体中文, 繁體中文.
+
 ## Install
 
 ```sh
@@ -25,18 +43,6 @@ It builds the latest release as a regular pacman package, and Omaplayer shows up
 in the launcher. Run it again to update; `sudo pacman -R omaplayer` removes it.
 For the latest from `main`, add `-s -- --git`. A prebuilt package is on every
 [release](https://github.com/verified-human-42/omaplayer/releases/latest).
-
-## Why
-
-- **Your hands already know it.** PotPlayer's keys, right-click master menu,
-  docked bar, Tab info panel, and wheel-for-volume. Plus the Linux classics
-  (`Ctrl+,`, `Ctrl+Q`, `F11`), and every key rebindable.
-- **Your theme is the skin.** Every color comes from your Omarchy theme, live.
-  Switch themes and the player follows.
-- **mpv underneath.** Hardware decoding, video drawn straight into the window,
-  folder playlists, resume where you left off, and stream URLs through yt-dlp.
-- **Subtitles that never come out garbled.** See below.
-- **Speaks your language:** English, 한국어, 日本語, 简体中文, 繁體中文.
 
 ## Smart subtitles
 
