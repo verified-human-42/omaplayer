@@ -4,10 +4,6 @@
 
 # Omaplayer
 
-A beautiful, opinionated media player for [Omarchy](https://omarchy.org), built on mpv.
-
-<br>
-
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
   <img src="docs/hero-light.svg" width="860" alt="Best player on Windows: PotPlayer. Opinion? Yes. Debatable? No. Best player on Omarchy: Omaplayer.">
